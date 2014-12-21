@@ -116,6 +116,30 @@ beginners starting with Emacs find it a monster to use).
 
   ;; Don't produce an additional window for Ediff, but keep it in the same frame
   (setq ediff-window-setup-function 'ediff-setup-windows-plain)
+  
+  ;; wrap email body
+  (add-hook 'mail-mode-hook 'turn-on-auto-fill)
+#+END_SRC
+
+=ibuffer= is a built-in command in Emacs since Emacs 22. It is a
+drastically improved buffer list such that there is no reason to use
+the old one anymore. However, somehow the default is still the ugly
+old buffer list. We rebind it here
+#+BEGIN_SRC emacs-lisp
+(require 'ibuffer)
+;; iBuffer binding
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+#+END_SRC
+
+Start session management to have cross-session history sharing. Also
+start =emacs-server= if it is not started already, so that we can use
+=emacsclient= to connect to it
+#+BEGIN_SRC emacs-lisp
+  ;; (require 'session)  
+  (add-hook 'after-init-hook 'session-initialize)
+  (load "server")
+  (unless (server-running-p)
+    (server-start))
 #+END_SRC
 
 * Package Repositories
@@ -213,8 +237,6 @@ global variable, =defvar= is the correct command to use instead of
       org-jekyll
       ox-reveal
       paredit
-      perspective
-      persp-projectile
       pkgbuild-mode
       popup
       projectile
@@ -411,6 +433,20 @@ the line numbers more efficiently. Here we use =nlinum=.
       ))
 #+END_SRC
 
+** Colorizing Compilation Buffer
+This setting enables ansi-color in compilation buffer. Very useful
+especially with cmake generated makefiles.
+#+BEGIN_SRC emacs-lisp
+  (setq compilation-scroll-output 'first-error)
+  
+  (require 'ansi-color)
+  (defun colorize-compilation-buffer ()
+    (toggle-read-only)
+    (ansi-color-apply-on-region (point-min) (point-max))
+    (toggle-read-only))
+  (add-hook 'compilation-filter-hook 'colorize-compilation-buffer)
+#+END_SRC
+
 ** Other settings
 Here are uncategorized visual settings, most of them trivial.
 
@@ -432,6 +468,13 @@ Here are uncategorized visual settings, most of them trivial.
 
   ;; Show matching brackets
   (show-paren-mode 1)
+
+  ;; Highlighting TODO, FIXME and BUG in programming modes
+  (add-hook 'prog-mode-hook
+            (lambda ()
+              (font-lock-add-keywords nil
+                                      '(("\\<\\(FIXME\\|TODO\\|BUG\\):" 1 font-lock-warning-face t)))
+              ))
 #+END_SRC
 
 * Org mode
@@ -740,7 +783,7 @@ to satisfy my needs.
       (define-key evil-normal-state-map "gt" 'tabbar-forward-tab)
       (define-key evil-normal-state-map "gr" 'tabbar-backward-tab)
 
-      ;; Ace-jump bindings in evil-mode
+      ;; <<<ace-jump-evil>>> Ace-jump bindings in evil-mode
       (define-key evil-normal-state-map " " 'ace-jump-char-mode)
       (define-key evil-visual-state-map " " 'ace-jump-char-mode)
 
@@ -846,6 +889,25 @@ mistakes in the process.
     ;;   ;; (yas-global-mode nil)
     ;;   ;; (yas/minor-mode-on)
     ;;   )
+#+END_SRC
+
+** Ace-jump mode
+This package is a fast way to jump to a target position in the
+buffer. Once in the mode, one press a letter and all occurrence of the
+letter in the buffer are highlighted with a unique label. One can then
+enter the corresponding label to jump to the target position
+precisely. This is faster than isearch mode especially when you can
+already pin-point the place you want to go. It also has integration
+with evil at [[ace-jump-evil][here]].
+#+BEGIN_SRC emacs-lisp
+  (use-package ace-jump-mode
+    :config
+    (progn
+      ;; (eval-after-load "ace-jump-mode"
+      (ace-jump-mode-enable-mark-sync)
+      (setq ace-jump-mode-case-fold nil)
+      ;;Personally I like ace-jump to be limited to the window I’m working in
+      (setq ace-jump-mode-scope 'window)))
 #+END_SRC
 
 ** Ace-window
@@ -1040,15 +1102,13 @@ under the same framework. A comprehensive guide can be found [[http://tuhdo.gith
 ** Projectile
 Projectile is a project management package for Emacs. It has nice
 project navigation and integration with other packages. Here is
-actually a minimal setting with integration with the =perspective= package.
+actually a minimal setting with integration with helm.
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
     :init
     (progn
-      (use-package perspective)
-      (use-package persp-projectile)
-      (persp-mode)
       (projectile-global-mode)
+      (use-package helm-projectile)
       (helm-projectile-on))
     :config
     (progn
@@ -1057,7 +1117,7 @@ actually a minimal setting with integration with the =perspective= package.
       ;; (define-key projectile-mode-map (kbd "C-c p a") 'projectile-ag)
       ;; (define-key projectile-mode-map (kbd "C-c p A") 'projectile-ack)
       ;; (define-key projectile-mode-map (kbd "C-c p f") 'helm-projectile)
-      (define-key projectile-mode-map (kbd "C-c p w") 'projectile-persp-switch-project)
+      ;; (define-key projectile-mode-map (kbd "C-c p w") 'projectile-persp-switch-project)
       (setq projectile-enable-caching t)
       ))
 #+END_SRC
@@ -1073,6 +1133,179 @@ breeze. The config is very simple too:
   :init
   (global-set-key (kbd "C-c g") 'magit-status))
 #+END_SRC
+
+** Undo-tree
+Undo tree is a way to keep track of undo history using a tree-like
+structure. It is integrated with evil-mode so that is a bonus as
+well. The settings here basically turns it on everywhere, asks it to
+save history into a file, and apply compression on that file.
+#+BEGIN_SRC emacs-lisp
+    (use-package undo-tree
+      :init
+      (global-undo-tree-mode t)
+      :config
+      (progn
+        ;; Undo tree settings
+        (setq undo-tree-auto-save-history 1)
+        (defadvice undo-tree-make-history-save-file-name
+          (after undo-tree activate)
+          (setq ad-return-value (concat ad-return-value ".gz")))))
+#+END_SRC
+
+** LaTeX
+Rather than a LaTeX package, there are quite a few packages working
+together here to provide the superior Emacs LaTeX editing
+experience. First is the =cdlatex.el= which is actually maintained
+outside of our package repos. The newest version is 4.6 which can be
+found [[https://staff.fnwi.uva.nl/c.dominik/Tools/cdlatex/cdlatex.el][here]]. I assume in this config file that the newest version is
+already downloaded at =~/.emacs.d/cdlatex/=
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/cdlatex")
+  (use-package cdlatex)
+#+END_SRC
+
+Now we need to pull in the big dependency which is AUCTeX. There are a
+lot of configurations here which I don't want to talk about at the moment...
+
+#+BEGIN_SRC emacs-lisp
+  (use-package tex-site
+    :mode ("\\.tex\\'" . LaTeX-mode)
+    :config
+    (progn
+      ;; (defun ac-latex-mode-setup ()
+      ;;   (add-to-list 'ac-sources 'ac-source-math-unicode)
+      ;;   (add-to-list 'ac-sources 'ac-source-math-latex)
+      ;;   (add-to-list 'ac-sources 'ac-source-latex-commands))         ; add ac-sources to default ac-sources
+
+      ;; (setq ac-sources
+      ;;       (append '(ac-source-math-unicode ac-source-math-latex ac-source-latex-commands)
+      ;;               ac-sources))
+
+      (defun my-initialize-latex ()
+        ;; Latex related settings
+        ;; (use-package tex-site)
+        (use-package zotelo)
+        ;; (use-package ac-math)
+        ;; (add-to-list 'load-path "~/.emacs.d/")
+        ;; (add-to-list 'ac-modes 'latex-mode)
+
+        (setq TeX-auto-save t)
+        (setq TeX-parse-self t)
+        (setq-default TeX-master nil)
+
+        (setq reftex-plug-into-AUCTeX t)
+        (setq TeX-newline-function 'newline-and-indent)
+        ;; (setq TeX-engine 'xetex)
+        (setq TeX-PDF-mode t)
+
+        ;; Only change sectioning colour
+        (setq font-latex-fontify-sectioning 'color)
+
+        ;; super-/sub-script on baseline
+        (setq font-latex-script-display (quote (nil)))
+
+        (setq LaTeX-indent-level 4)
+
+        (setq TeX-auto-untabify t) ; Automatically remove all tabs from a file before saving it.
+
+        (setq TeX-math-close-double-dollar t)
+
+                                          ;(add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf %t" TeX-run-command nil (latex-mode docTeX-mode)))
+        ;; (setq TeX-command-default "MkLaTeX")
+        ;; (add-hook 'latex-mode-hook 'turn-on-cdlatex) ;with AUCTeX LaTeX mode
+
+        (setq LaTeX-command-style '(("" "%(PDF)%(latex) -file-line-error %S%(PDFout)")))
+        (global-set-key (kbd "C-c +") 'cdlatex-item)
+        )
+
+      (defun evil-outline-folding-latex ()
+        (evil-define-command latex-evil-open-fold ()
+          "Open one fold under the cursor."
+          (outline-minor-mode)
+          (show-children))
+        (evil-define-command latex-evil-close-fold ()
+          "Close one fold under the cursor."
+          (outline-minor-mode)
+          (hide-children))
+        (evil-define-command latex-evil-open-folds-at-point ()
+          "Open all folds under the cursor recursively."
+          (outline-minor-mode)
+          (show-subtree))
+        (evil-define-command latex-evil-close-folds-at-point ()
+          "Close all folds under the cursor recursively."
+          (outline-minor-mode)
+          (hide-subtree))
+        (evil-define-command latex-evil-close-all-folds ()
+          "Close all folds."
+          (outline-minor-mode)
+          (hide-sublevels 1))
+        (evil-define-command latex-evil-open-all-folds ()
+          "Open all folds."
+          (outline-minor-mode)
+          (show-all))
+        (evil-define-command latex-evil-fold-more ()
+          "Fold more."
+          (outline-minor-mode)
+          (when (> evil-fold-level 0)
+            (decf evil-fold-level)
+            (hide-sublevels (+ evil-fold-level 1))))
+        (evil-define-command latex-evil-fold-less ()
+          "Reduce folding."
+          (outline-minor-mode)
+          (incf evil-fold-level)
+          (hide-sublevels (+ evil-fold-level 1)))
+
+        (evil-declare-key 'normal LaTeX-mode-map
+          "zo" #'latex-evil-open-folds-at-point
+          "zO" #'latex-evil-open-fold
+          "zc" #'latex-evil-close-folds-at-point
+          "zC" #'latex-evil-close-fold
+          "zm" #'latex-evil-close-all-folds
+          "zM" #'latex-evil-open-all-folds
+          "zr" #'latex-evil-fold-less
+          "zR" #'latex-evil-fold-more))
+      ;; (define-key evil-normal-state-map "zO" #'evil-open-fold)
+      ;; (define-key evil-normal-state-map "zo" #'evil-open-folds-at-point)
+      ;; (define-key evil-normal-state-map "zC" #'evil-close-fold)
+      ;; (define-key evil-normal-state-map "zc" #'evil-close-folds-at-point)
+      ;; (define-key evil-normal-state-map "za" nil)
+      ;; (define-key evil-normal-state-map "zA" nil)
+      ;; (define-key evil-normal-state-map "zm" #'evil-fold-more)
+      ;; (define-key evil-normal-state-map "zM" #'evil-close-all-folds)
+      ;; (define-key evil-normal-state-map "zr" #'evil-fold-less)
+      ;; (define-key evil-normal-state-map "zR" #'evil-open-all-folds)
+      (evil-outline-folding-latex)
+
+      (defun setup-synctex-latex ()
+        (setq TeX-source-correlate-method (quote synctex))
+        (setq TeX-source-correlate-mode t)
+        (setq TeX-source-correlate-start-server t)
+        (setq TeX-view-program-list
+              (quote
+               (("Okular" "okular --unique \"%o#src:%n$(pwd)/./%b\""))))
+        (setq TeX-view-program-selection
+              (quote
+               (((output-dvi style-pstricks)
+                 "dvips and gv")
+                (output-dvi "xdvi")
+                (output-pdf "Okular")
+                (output-html "xdg-open")))))
+      
+      (add-hook 'LaTeX-mode-hook 'my-initialize-latex)
+      (add-hook 'LaTeX-mode-hook (lambda () (add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf -pdflatex='pdflatex -file-line-error -synctex=1' -pvc %t" TeX-run-command nil (latex-mode docTeX-mode)))))
+      (add-hook 'LaTeX-mode-hook (lambda () (setq TeX-command-default "MkLaTeX")))
+      (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex) ;with AUCTeX LaTeX mode
+      (add-hook 'LaTeX-mode-hook (lambda ()
+                                   (TeX-fold-mode 1)))
+      (add-hook 'LaTeX-mode-hook 'visual-line-mode)
+      (add-hook 'LaTeX-mode-hook 'LaTeX-math-mode)
+      (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+      (add-hook 'LaTeX-mode-hook 'zotelo-minor-mode)
+      (add-hook 'LaTeX-mode-hook 'setup-synctex-latex)
+      ))
+#+END_SRC
+
+*** TODO Finish the documentation of these LaTeX settings
 
 * Language modes
 These are less specific settings than the above section, oriented not
@@ -1150,3 +1383,9 @@ carefully to see where the problem is.
   (setq custom-file "~/.emacs.d/custom.el")
   (load custom-file)
 #+END_SRC
+
+* Unfinished
+*** TODO Smartparens mode
+*** TODO Haskell mode
+*** TODO Various language modes
+*** TODO Session management
