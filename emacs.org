@@ -1,0 +1,1152 @@
+#+TITLE: Unified Emacs Init Description
+#+AUTHOR: Alex Chen
+#+PROPERTY: header-args:emacs-lisp :tangle yes
+#+PROPERTY: mkdirp yes
+#+OPTIONS: toc:2 num:nil ^:nil
+
+* Introduction
+This is a new effort to making a unified and portable Emacs init
+configuration using org-mode. The idea is to have a simple =emacs.el=
+in =.emacs.d= directory, while tangling all the components from this
+single file. At the same time, this file will act as a documentation
+of whatever is going into the =emacs.el= init file.
+
+* General Settings
+The settings here are independent of any external packages, but rather
+how Emacs itself behaves. They are added here before any
+package-specific settings because these are more general. However, the
+generalness is somewhat subjective here, and some of the settings
+might be better suited elsewhere? Time is needed to decide such things.
+
+** Lexical binding
+Emacs used to not have lexical binding, and everything has dynamic
+scope (read: global scope). As of Emacs 24, lexical binding can be
+turned on for a specific buffer by the following line at the beginning
+of the file:
+
+#+BEGIN_SRC emacs-lisp
+;; -*- lexical-binding: t -*-
+#+END_SRC
+
+The comparison of lexical vs dynamic binding is summarized pretty well
+in [[http://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][this article]] on Emacs wiki. In general dynamic binding is dispised
+by most programmers, and people quote this as one of the weaknesses of
+Emacs-lisp. Therefore it is desirable to have this line at the
+beginning of our init.el
+
+** Personal Settings
+First things first. These settings are basically "who-i-am" and
+"where-i-am" settings and independent of any external packages. I just
+want to put them here and have them out of the way. The content of the
+settings are pretty self-explanatory.
+
+#+BEGIN_SRC emacs-lisp
+(setq user-full-name "Alex Chen")
+(setq user-mail-address "fizban007@gmail.com")
+(setq user-organization "Columbia University")
+
+(set-language-environment "English")
+
+(prefer-coding-system 'utf-8)
+#+END_SRC
+
+** Convenience Settings
+Here are some settings which are generally good but somehow is not
+turned on by default in vanilla Emacs (one of the reasons why
+beginners starting with Emacs find it a monster to use).
+
+#+BEGIN_SRC emacs-lisp
+  ;; Change the yes or no dialog to y or n
+  (defalias 'yes-or-no-p 'y-or-n-p)
+
+  ;; Don't create backup-files
+  (setq make-backup-files nil) ; stop creating those backup~ files
+  (setq auto-save-default nil) ; stop creating those #auto save# files
+
+  ;; Disable annoying startup-stuff
+  (setq inhibit-startup-message t
+        inhibit-startup-echo-area-message t)
+
+  ;; Isearch put you at the beginning of the word
+  (add-hook 'isearch-mode-end-hook 'my-goto-match-beginning)
+  (defun my-goto-match-beginning () 
+    (when isearch-forward (goto-char isearch-other-end)))
+
+  ;; scroll one line at a time (less "jumpy" than defaults)
+  (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time
+  (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
+  (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+  (setq scroll-step 1) ;; keyboard scroll one line at a time
+  (setq scroll-conservatively 10000)
+
+  ;; when pasting with middle click in Linux X11, set to paste at cursor
+  ;; position, not at click position
+  (setq mouse-yank-at-point t)
+
+  ;; Find file as root
+  (defun find-file-as-root ()
+    "Like `ido-find-file, but automatically edit the file with
+    root-privileges (using tramp/sudo), if the file is not writable by
+    user."
+    (interactive)
+    (let ((file (read-file-name "Edit as root: ")))
+      (unless (file-writable-p file)
+        (setq file (concat "/sudo:root@localhost:" file)))
+      (find-file file)))
+  ;; or some other keybinding...
+  (global-set-key (kbd "C-x F") 'find-file-as-root)
+
+  ;; Use C-x C-e to evaluate region
+  (global-set-key (kbd "C-x C-e") 'eval-region)
+
+  ;; Pane manipulation
+  (global-set-key (kbd "M-1") 'delete-other-windows) ; expand current pane
+  (global-set-key (kbd "M-5") 'split-window-vertically) ; split pane top/bottom
+  (global-set-key (kbd "M-4") 'split-window-horizontally) ; split pane top/bottom
+  (global-set-key (kbd "M-3") 'delete-window) ; close current pane
+
+  ;; Garbage collection, prevent gc for a longer period of time
+  (setq gc-cons-threshold 20000000)
+
+  ;; Auto revert buffers which are modified elsewhere
+  (global-auto-revert-mode 1)
+
+  ;; Don't save kill-ring to the x clipboard. This avoids some error at exit
+  (setq x-select-enable-clipboard-manager nil) 
+
+  ;; Don't produce an additional window for Ediff, but keep it in the same frame
+  (setq ediff-window-setup-function 'ediff-setup-windows-plain)
+#+END_SRC
+
+* Package Repositories
+First we need to set up some package repositories to establish a
+consistent way to get packages. We use the official gnu repo, as well
+as the third-party melpa and marmalade repos. From [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][this source]], the
+difference between these two repos and the official repo is that:
+
++ melpa is a package archive managed by Milkypostman. It's the easiest
+  package archive to add packages to, and is automatically updated
+  when the package is. The go-to source for up to date, and the vast
+  majority of, packages. However it's worth noting that with
+  cutting-edge comes instability, so that is a risk of stability one
+  should be aware of. It's worth noting I've never been broken for any
+  package I've installed via melpa, however.
+
++ marmalade is another third-party package manager. Marmalade tends to
+  be more stable, due to the requirement that developers explicitely
+  upload new versions of their packages.
+ 
+The general trend is that for stability gnu > marmalade > melpa, while
+for cutting-edgedness melpa > marmalade > gnu. From Emacs 24.4, the
+package manager allows the user to specify which version to install
+when there are several different versions of the same package on
+different repos. This comes in rather handy for someone who wants to
+prefer some package to be stable while others being cutteng-edge.
+
+Package management is done through the official =package.el=.
+#+BEGIN_SRC emacs-lisp
+(require 'package)
+
+(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+
+(package-initialize)
+#+END_SRC
+
+After =(package-initialize)= all the directories under
+=~/.emacs.d/elpa= will be added to the load-path, and therefore the
+packages accessible from Emacs. Most of the other packages will no
+longer need to set their load-path anymore.
+
+** List of essential packages
+Here we define a list of essential packages that we can't live
+without. After package archives are initialized, Emacs will go through
+this list and install any package in this list which is missing from
+the system. Note that since this is the first time we define this
+global variable, =defvar= is the correct command to use instead of
+=setq=, which is supposed to set variables instead of creating them.
+#+BEGIN_SRC emacs-lisp
+  (defvar my-required-packages
+    '(ace-jump-mode
+      ace-window
+      ag
+      async
+      auctex
+      auto-complete
+      auto-complete-clang
+      bind-key
+      cmake-mode
+      company
+      company-auctex
+      company-c-headers
+      concurrent
+      cpputils-cmake
+      ctable
+      dash
+      epc
+      epl
+      ess
+      evil
+      evil-leader
+      evil-nerd-commenter
+      evil-paredit
+      evil-surround
+      flx
+      flx-ido
+      flycheck
+      fold-dwim
+      geiser
+      ggtags
+      google-c-style
+      haskell-mode
+      helm
+      helm-projectile
+      ido-vertical-mode
+      js2-mode
+      lua-mode
+      magit
+      markdown-mode
+      neotree
+      nlinum
+      org
+      org-jekyll
+      ox-reveal
+      paredit
+      perspective
+      persp-projectile
+      pkgbuild-mode
+      popup
+      projectile
+      request
+      rtags
+      session
+      slime
+      smart-mode-line
+      smex
+      solarized-theme
+      tabbar
+      undo-tree
+      use-package
+      websocket
+      wgrep
+      wgrep-ag
+      yasnippet
+      zotelo) "List of packages to ensure installed at launch")
+#+END_SRC
+
+This is a really long list for "essential" packages. However it is
+hard to slim it down because so many of them are useful. At least we
+have a central way of dealing with packages. Local installations can
+play around and install new packages, and when I find a new package to
+be important enough I'll add it to this list. I'll also /try/ to
+update this list periodically by removing packages that I don't find
+much use.
+
+Now with =my-required-packages= defined, we need to install these
+packages if they are not already in the system. The following code is
+copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][here]].
+#+BEGIN_SRC emacs-lisp
+(require 'cl)
+
+; method to check if all packages are installed
+(defun packages-installed-p ()
+  (loop for p in my-required-packages
+        when (not (package-installed-p p)) do (return nil)
+        finally (return t)))
+
+; if not all packages are installed, check one by one and install the missing ones.
+(unless (packages-installed-p)
+  ; check for new packages (package versions)
+  (message "%s" "Emacs is now refreshing its package database...")
+  (package-refresh-contents)
+  (message "%s" " done.")
+  ; install the missing packages
+  (dolist (p my-required-packages)
+    (when (not (package-installed-p p))
+      (package-install p))))
+#+END_SRC
+
+The new function =packages-installed-p= checks if all the packages in
+the list are installed by looping over the list and checking if every
+package is installed by invoking =package-installed-p= which is
+defined in =package.el=. Then the =unless= clause is carried out if
+the predicate returns nil, in which case it will first refresh the
+package contents, and then install any package which does not satisfy
+=package-installed-p=.
+
+The rest of this document is dedicated to loading and configuration of
+these packages.
+
+** Use-package macro
+=use-package= is a package to simplify loading packages. Instead of
+littering the init file with a huge number of =require= commands, one
+can use the =use-package= command to selectively load packages and
+defer their initialization until the package is actually needed. The
+full documentation can be found on the [[https://github.com/jwiegley/use-package][official website]].
+#+BEGIN_SRC emacs-lisp
+;; The first line is to prevent problems with use-package
+(require 'ert)
+(require 'use-package)
+#+END_SRC
+
+* Look and Feel
+This section loads themes and alters the looks of Emacs. To be honest,
+vanilla Emacs looks like crap while it could have looked so much
+better with just a few packages loaded. 
+
+** Font
+The default font I found to be best looking is Consolas. Others don't
+even come close. It might be tricky to get a proper version of it
+though, since it is propietary. This block tries to find Consolas in
+the list of font families in the system. If it is found then we set it
+as the default font for both the initial frame and any new frame that
+Emacs creates.
+
+#+BEGIN_SRC emacs-lisp
+(when (member "Consolas" (font-family-list))
+  (add-to-list 'initial-frame-alist '(font . "Consolas-10"))
+  (add-to-list 'default-frame-alist '(font . "Consolas-10"))
+  (defvar my-font-family "Consolas")
+  (defvar my-font-size 100))
+#+END_SRC
+
+** Theme
+The best theme I have found up to now is Solarized. It comes in both
+dark and light variants and while I prefer the dark version for most
+of the time, the light version is useful when editting in some light
+conditions. The following code loads =solarized-dark= as the default
+theme.
+
+#+BEGIN_SRC emacs-lisp
+(load-theme 'solarized-dark t)
+#+END_SRC
+
+Note that Solarized theme will require 24bit color support in
+terminal, otherwise it is very difficult to get the same look-and-feel
+even when the terminal is set to Solarized theme. In Emacs 24.4 there
+seems to be built-in 24bit color support in terminals, but in prior
+versions one might need to apply a patch. Note also that the terminal
+application needs to support 24bit color. I'm using konsole right now
+and it works great with terminal mode emacs.
+
+** Smart mode line
+The mode line is a very important part of Emacs, while often being the
+most ugly part with some unexplicable symbols. The =smart-mode-line=
+package revamps the mode line and makes it actually useful and more
+pleasing to look at. Here is the config (note that this is our first
+package config which uses =use-package=!)
+
+#+BEGIN_SRC emacs-lisp
+  (use-package smart-mode-line
+    :init
+    (progn 
+      (setq sml/theme 'dark)
+      (if after-init-time (sml/setup)
+        (add-hook 'after-init-hook 'sml/setup))))
+#+END_SRC
+
+** Tabbar
+One of the things that I miss a lot going from Vim to Emacs is a tab
+bar at the top of the screen showing the open buffers in the current
+session. Now a tab bar is usually not sufficient to show all open
+buffers and relying on the bar to find buffers is usually not the most
+efficient way. However, when just browsing it still very useful to
+easily keep track of what files are open without using =C-x b= every
+time. The =tabbar= package solves this problem and is the best I've found.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package tabbar
+    :init
+    (progn
+      (tabbar-mode)
+      
+      ;; Tabbar bindings
+      (global-set-key [\M-left] 'tabbar-backward-tab)
+      (global-set-key [\M-right] 'tabbar-forward-tab)
+      (global-set-key [\M-up] 'tabbar-buffer)
+      (global-set-key [\M-down] 'tabbar-forward-group)
+      
+      ;; Set tabbar faces
+      (set-face-attribute
+       'tabbar-selected nil
+       :background "#073642"
+       :foreground "#839496"
+       :height 1.0
+       :box nil
+       :family my-font-family
+       :height my-font-size)
+
+      (set-face-attribute
+       'tabbar-default nil
+       :background "#eee8d5"
+       :foreground "#586e75"
+       :height 0.9
+       :family my-font-family
+       :height my-font-size)
+
+      (set-face-attribute
+       'tabbar-button nil
+       :box nil)
+      ))
+#+END_SRC
+
+Note that when =evil-mode= is loaded, there is a couple more bindings
+needed for tabbar. The config is [[tabbar-evil][here]].
+
+** Line Numbers
+The following block shows line numbers to the left of the buffer. It
+is usually a good thing to have line numbers available to refer
+to. I'm still not sure if =nlinum= or =linum= is better at displaying
+the line numbers more efficiently. Here we use =nlinum=.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package nlinum
+    :init
+    (progn
+      ;;(nlinum-mode 1)
+      (global-nlinum-mode 1)
+      ;;       (use-package linum-relative
+      ;;         :ensure linum-relative)
+      ))
+#+END_SRC
+
+** Other settings
+Here are uncategorized visual settings, most of them trivial.
+
+#+BEGIN_SRC emacs-lisp
+  ;; Hide the scroll bar
+  (scroll-bar-mode -1)
+
+  ;; Use C-c s to toggle visibility of scroll bar
+  (global-set-key (kbd "C-c s") 'scroll-bar-mode)
+
+  ;; Hide the menu bar
+  (menu-bar-mode -1)
+
+  ;; Hide the toolbar
+  (tool-bar-mode -1)
+
+  ;; Display time in mode line
+  (display-time)
+
+  ;; Show matching brackets
+  (show-paren-mode 1)
+#+END_SRC
+
+* Org mode
+Another mode which requires separate section is the powerful
+org-mode. This is actually the mode which got me interested in Emacs
+in the first place, and evetually became the reason I got converted
+from Vim. There is simply no alternative which is so powerful and
+customizable as Emacs's org-mode.
+
+There are a lot of customizations here, most of them are years old and
+I already forgot what they do. When I remember, I try to be specific
+on what these customizations are, and when I don't remember, I'll try
+to stick a marker to remind myself to come back and finish it.
+
+** Init org-mode
+Because org is so important, we want to load it when Emacs starts.
+#+BEGIN_SRC emacs-lisp
+(use-package org)
+#+END_SRC
+
+** Some generic customizations
+These are some generic customizations which are hopefully
+self-explanatory. Some of them I copied from other bloggers but have
+forgotten the source.
+#+BEGIN_SRC emacs-lisp
+  (setq org-directory "~/.org/")
+  ;; fontify code in code blocks
+  (setq org-src-fontify-natively t)
+  (setq org-agenda-ndays 7)
+  (setq org-agenda-repeating-timestamp-show-all nil)
+  (setq org-agenda-restore-windows-after-quit t)
+  (setq org-agenda-show-all-dates t)
+  (setq org-agenda-skip-deadline-if-done t)
+  (setq org-agenda-skip-scheduled-if-done t)
+  (setq org-agenda-sorting-strategy '((agenda time-up priority-down tag-up) (todo tag-up)))
+  (setq org-agenda-start-on-weekday nil)
+  (setq org-agenda-todo-ignore-deadlines t)
+  (setq org-agenda-todo-ignore-scheduled t)
+  (setq org-agenda-todo-ignore-with-date t)
+  (setq org-agenda-window-setup 'other-window)
+  (setq org-deadline-warning-days 7)
+  (setq org-fast-tag-selection-single-key 'expert)
+  (setq org-log-done 'done)
+  ;; (setq org-refile-targets '(("newgtd.org" :maxlevel . 1) ("someday.org" :level . 2)))
+  (setq org-reverse-note-order nil)
+  (setq org-startup-indented t)
+  (setq org-tags-column -78)
+  (setq org-tags-match-list-sublevels nil)
+  (setq org-time-stamp-rounding-minutes '(0 5))
+  (setq org-use-fast-todo-selection t)
+  (setq org-use-tag-inheritance nil)
+  (setq org-confirm-babel-evaluate nil)
+
+  (setq org-todo-keyword-faces
+        '(("URGENT" . "red") ("TODO" . org-warning) ("STARTED" . "orange") ("APPT" . "lightblue") ("WAITING" . "lightgreen")))
+
+  (setq org-todo-keywords
+        '((sequence "TODO(t)" "URGENT(u)" "STARTED(s)" "WAITING(w)" "MAYBE(m)" "|" "DONE(d)" "CANCELED(c)" "DEFERRED(d)")))
+
+  (defun org-summary-todo (n-done n-not-done)
+     "Switch entry to DONE when all subentries are done, to TODO otherwise."
+     (let (org-log-done org-log-states)   ; turn off logging
+       (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
+   
+  (defvar org-my-archive-expiry-days 5)
+  ; Prevent problem with ^ and _ in cdlatex
+  (defalias 'last-command-char 'last-command-event)
+#+END_SRC
+
+** Org-publish
+Here we configure the publish engine of org-mode. Specifically we like
+to publish in 2 formats: html and latex. For latex we need the
+=ox-latex= package. In the following code block, we mostly define the
+common latex packages to use and the org-latex preview format to use
+when embedding latex directly into org-mode.
+#+BEGIN_SRC emacs-lisp
+  (use-package ox-latex
+    :config
+    (progn 
+      (add-to-list 'org-latex-packages-alist '("" "listings"))
+      (add-to-list 'org-latex-packages-alist '("" "color"))
+      (add-to-list 'org-latex-classes
+                   '("cyr-org-article"
+                     "\\documentclass[11pt,letterpaper]{article}
+                    \\usepackage{graphicx} 
+                    \\usepackage{amsmath}
+                    \\usepackage{tikz}
+                    \\usepackage{hyperref}
+                    \\usepackage{geometry}
+                    \\geometry{letterpaper, textwidth=6.7in, textheight=10in,
+                                marginparsep=7pt, marginparwidth=.6in}
+                    \\pagestyle{empty}
+                    \\title{}
+                            [NO-DEFAULT-PACKAGES]
+                            [PACKAGES]
+                            [EXTRA]"
+                     ("\\section{%s}" . "\\section*{%s}")
+                     ("\\subsection{%s}" . "\\subsection*{%s}")
+                     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                     ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                     ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+      
+      ;; ;; Use xelatex to process the file
+      ;; (setq org-latex-pdf-process 
+      ;;       '("pdflatex -interaction nonstopmode %f"
+      ;;         "pdflatex -interaction nonstopmode %f")) ;; for multiple passes
+
+      ;; Latex preview setting
+      (setq org-latex-create-formula-image-program 'imagemagick)
+      (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.4))
+      (setq org-latex-listings t)))
+#+END_SRC
+
+We also want to use the html publish engine. This one is pretty
+straight-forward and I don't have any customizations (mainly because I
+seldom use it, and don't know html very much)
+#+BEGIN_SRC emacs-lisp
+(use-package ox-html)
+#+END_SRC
+
+Now these are the settings for publishing a specific org project: my
+notes. It is under the =~/.org/notes= directory and I would like to
+export both an html and a pdf version of it. Hence the following code
+block for ox-publish:
+#+BEGIN_SRC emacs-lisp
+  (use-package ox-publish
+    :config
+    (setq org-publish-project-alist
+	  '(("notes-html"
+	     :base-directory "~/.org/notes/"
+	     :base-extension "org"
+	     :publishing-directory "~/.org/notes/export/html"
+	     :publishing-function org-html-publish-to-html
+	     :section-numbers nil)
+	    ("notes-pdf"
+	     :base-directory "~/.org/notes/"
+	     :base-extension "org"
+	     :publishing-directory "~/.org/notes/export/pdf"
+	     :publishing-function org-latex-publish-to-pdf)
+	    ("notes" :components ("notes-html" "notes-pdf"))
+	    )))
+#+END_SRC
+
+** External agenda update
+This function was taken from other blogs which solves the problem of
+viewing org-mode agenda in an external program (in my case awesome
+window manager). It basically writes the agenda to a text file every
+time the agenda is updated. The function is kept for legacy reasons
+and I've turned off this functionality for quite a long time.
+#+BEGIN_SRC emacs-lisp
+(defun th-org-update-agenda-file (&optional force)
+  (interactive)
+  (save-excursion
+    (save-window-excursion
+      (let ((file "~/.org/org-agenda.txt"))
+        (org-agenda-list)
+        (org-agenda-write file)))))
+;; Update agenda file after changes to org files
+;;   (add-hook 'after-save-hook 'th-org-update-agenda-file t t)
+#+END_SRC
+
+** Org-capture Settings
+Org-capture is a system which allows the author to quickly add entries
+to a (supposedly big) org file from anywhere within Emacs without
+actually opening the file. It can be used to enter structured
+information into an org file in an organized way, such as based on
+date. Here are some of the templates I've accumulated over the years:
+#+BEGIN_SRC emacs-lisp
+(setq org-capture-templates
+      '(("t" "Todo" entry (file+headline "~/.org/newgtd.org" "Tasks")
+         "* TODO %^{Brief Description}  %^g\n%?\nAdded: %U")
+        ("n" "Notes" entry (file+datetree "~/.org/notes/notes.org")
+         "* %^{Topic} \n%i%?\n") 
+        ("b" "Birthday" plain (file+headline "~/.org/birthday.org" "Birthdays")
+         "\%\%%?\(org-anniversary  %^{Date}\) %^{Name} would be \%d years old.\n")
+        ("w" "Post" entry (file+datetree "~/org-jekyll/org/cyr.org")
+         "* %^{Title}  :blog:\n  :PROPERTIES:\n  :on: %T\n  :END:\n  %?\n  %x")
+        ("k" "Tricks" entry (file+datetree "~/.org/tricks.org" "Tricks")
+         "* %^{Topic}  :tricks:\n  :PROPERTIES:\n  :on: %T\n  :END:\n  %?\n  %x")
+        ))
+#+END_SRC
+
+** Misc Settings
+Here are some further settings for org-mode, including key bindings, etc.
+#+BEGIN_SRC emacs-lisp
+    (add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\)$" . org-mode))
+    (global-set-key "\C-cl" 'org-store-link)
+    (global-set-key "\C-cc" 'org-capture)
+    (global-set-key "\C-ca" 'org-agenda)
+    (global-set-key "\C-cb" 'org-iswitchb)
+    (add-hook 'org-mode-hook (lambda ()
+                               (setq org-completion-use-ido t)
+                               (visual-line-mode t)))
+    (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+    ;; (add-hook 'org-mode-hook 'th-org-mode-init)
+    (add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
+
+    ;; Org-babel hook
+    (add-hook 'org-mode-hook (lambda ()
+                               ;; active Babel languages
+                               (org-babel-do-load-languages
+                                'org-babel-load-languages
+                                '((haskell . t)
+                                  (python . t)
+                                  (sh . t)
+                                  (C . t)
+                                  (R . t)
+                                  (latex . t)
+                                  (emacs-lisp . t)
+                                  (scheme . t)
+                                  ))
+                               ))
+#+END_SRC
+
+* Evil mode
+The =evil-mode= in Emacs is a package that simulates Vim behavior. It
+is the best of its kind in that it almost fully simulates all of Vim's
+behavior by adding a modal layer on top of Emacs's editing
+facilities. It is purely because of this package that I successfully
+made the transition from Vim to Emacs, and I suppose it is the same
+story for many others as well. In fact, this has been proposed as the
+solution to the old Emacs problem: "Emacs is a pretty good operating
+system, but it could use a better text editor".
+
+Therefore we dedicate a whole section in our config file to this
+particular mode/package. Also since I use Colemak keyboard config,
+there are quite a few things to tweak from the default configuration
+to satisfy my needs.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package evil
+    :init
+    (evil-mode 1)
+    ;; (require 'evil-nerd-commenter)
+    :config
+    (progn 
+      (use-package evil-surround
+        :init
+        (progn 
+          (global-evil-surround-mode 1)
+          (add-hook 'emacs-lisp-mode-hook (lambda ()
+                                            (push '(?` . ("`" . "'")) evil-surround-pairs-alist)))
+          (add-hook 'c++-mode-hook (lambda ()
+                                     (push '(?< . ("< " . " >")) evil-surround-pairs-alist)))))
+      (defun evil-undefine ()
+        (interactive)
+        (let (evil-mode-map-alist)
+          (call-interactively (key-binding (this-command-keys)))))
+      
+      (add-to-list 'evil-emacs-state-modes 'arxiv-mode)
+      (add-to-list 'evil-emacs-state-modes 'eww-mode)
+      
+      ;; Evil keybindings
+      (define-key evil-motion-state-map (kbd "RET") nil)
+      ;; (define-key evil-normal-state-map (kbd "RET") nil)
+      (define-key evil-normal-state-map "k" 'evil-next-visual-line)
+      (define-key evil-normal-state-map "h" 'evil-previous-visual-line)
+      (define-key evil-normal-state-map "j" 'evil-backward-char)
+      (define-key evil-visual-state-map "k" 'evil-next-visual-line)
+      (define-key evil-visual-state-map "h" 'evil-previous-visual-line)
+      (define-key evil-visual-state-map "j" 'evil-backward-char)
+      (define-key evil-normal-state-map "\C-e" 'evil-end-of-line)
+      (define-key evil-insert-state-map "\C-e" 'end-of-line)
+      (define-key evil-visual-state-map "\C-e" 'evil-end-of-line)
+      (define-key evil-normal-state-map "\C-f" 'evil-forward-char)
+      (define-key evil-insert-state-map "\C-f" 'evil-forward-char)
+      (define-key evil-insert-state-map "\C-f" 'evil-forward-char)
+      (define-key evil-normal-state-map "\C-b" 'evil-backward-char)
+      (define-key evil-insert-state-map "\C-b" 'evil-backward-char)
+      (define-key evil-visual-state-map "\C-b" 'evil-backward-char)
+      ;;(define-key evil-normal-state-map "\C-d" 'evil-delete-char)
+      ;;(define-key evil-insert-state-map "\C-d" 'evil-delete-char)
+      ;;(define-key evil-visual-state-map "\C-d" 'evil-delete-char)
+      (define-key evil-normal-state-map "\C-n" 'evil-next-line)
+      (define-key evil-insert-state-map "\C-n" 'evil-next-line)
+      (define-key evil-visual-state-map "\C-n" 'evil-next-line)
+      (define-key evil-normal-state-map "\C-p" 'evil-previous-line)
+      (define-key evil-insert-state-map "\C-p" 'evil-previous-line)
+      (define-key evil-visual-state-map "\C-p" 'evil-previous-line)
+      (define-key evil-normal-state-map "\C-w" 'backward-kill-word)
+      (define-key evil-insert-state-map "\C-w" 'backward-kill-word)
+      (define-key evil-visual-state-map "\C-w" 'backward-kill-word)
+      (define-key evil-normal-state-map "\C-y" 'yank)
+      (define-key evil-insert-state-map "\C-y" 'yank)
+      (define-key evil-visual-state-map "\C-y" 'yank)
+      (define-key evil-normal-state-map "\C-k" 'kill-line)
+      (define-key evil-insert-state-map "\C-k" 'kill-line)
+      (define-key evil-visual-state-map "\C-k" 'kill-region)
+      (define-key evil-normal-state-map "Q" 'call-last-kbd-macro)
+      (define-key evil-visual-state-map "Q" 'call-last-kbd-macro)
+      ;; (define-key evil-normal-state-map (kbd "TAB") 'evil-undefine)
+      (define-key evil-normal-state-map "\M-." 'evil-undefine)
+      (define-key evil-normal-state-map "\C-t" 'evil-undefine)
+      (define-key evil-insert-state-map "\C-t" 'evil-undefine)
+      (define-key evil-normal-state-map "\C-v" 'evil-scroll-down)
+      (define-key evil-visual-state-map "\C-v" 'evil-scroll-down)
+      (define-key evil-normal-state-map "\M-v" 'evil-scroll-up)
+      (define-key evil-visual-state-map "\M-v" 'evil-scroll-up)
+      (define-key evil-normal-state-map "\C-\M-v" 'scroll-other-window)
+      (define-key evil-visual-state-map "\C-\M-v" 'scroll-other-windown)
+      (define-key evil-normal-state-map (kbd "DEL") 'evil-scroll-up)
+      (define-key evil-visual-state-map (kbd "DEL") 'evil-scroll-up)
+      (define-key evil-normal-state-map "zO" 'evil-open-folds)
+      
+      ;; <<<tabbar-evil>>> Tabbar bindings in evil-mode
+      (define-key evil-normal-state-map "gt" 'tabbar-forward-tab)
+      (define-key evil-normal-state-map "gr" 'tabbar-backward-tab)
+
+      ;; Ace-jump bindings in evil-mode
+      (define-key evil-normal-state-map " " 'ace-jump-char-mode)
+      (define-key evil-visual-state-map " " 'ace-jump-char-mode)
+
+          ;;; esc quits everything just like vim
+      (define-key evil-normal-state-map [escape] 'keyboard-quit)
+      (define-key evil-visual-state-map [escape] 'keyboard-quit)
+      (define-key minibuffer-local-map [escape] 'minibuffer-keyboard-quit)
+      (define-key minibuffer-local-ns-map [escape] 'minibuffer-keyboard-quit)
+      (define-key minibuffer-local-completion-map [escape] 'minibuffer-keyboard-quit)
+      (define-key minibuffer-local-must-match-map [escape] 'minibuffer-keyboard-quit)
+      (define-key minibuffer-local-isearch-map [escape] 'minibuffer-keyboard-quit)
+      
+      (use-package evil-nerd-commenter
+        :init
+        (progn
+          (global-set-key (kbd "M-;") 'comment-dwim) 
+          (define-key evil-normal-state-map ",c " 'evilnc-comment-or-uncomment-lines)
+          (define-key evil-visual-state-map ",c " 'evilnc-comment-or-uncomment-lines)
+          (define-key evil-normal-state-map ",cc" 'evilnc-copy-and-comment-lines)))
+      ;;   (define-key evil-normal-state-map ",cl" 'evilnc-comment-or-uncomment-to-the-line)
+
+      (evil-declare-key 'normal org-mode-map
+        "za" 'org-cycle
+        "zA" 'org-shifttab
+        "zc" 'hide-subtree
+        "zC" 'org-hide-block-all
+        "zm" 'hide-body
+        "zo" 'show-subtree
+        "zO" 'show-all
+        "zr" 'show-all
+        (kbd "RET") 'org-open-at-point
+        (kbd "M-j") 'org-shiftleft
+        (kbd "M-l") 'org-shiftright
+        (kbd "M-J") 'org-metaleft
+        (kbd "M-K") 'org-metadown
+        (kbd "M-H") 'org-metaup
+        (kbd "M-L") 'org-metaright)
+      
+      ;; ECB compatibility settings
+      (add-hook 'ecb-history-buffer-after-create-hook 'evil-motion-state)
+      (add-hook 'ecb-directories-buffer-after-create-hook 'evil-motion-state)
+      (add-hook 'ecb-methods-buffer-after-create-hook 'evil-motion-state)
+      (add-hook 'ecb-sources-buffer-after-create-hook 'evil-motion-state)))
+  ;; (evilnc-default-hotkeys)
+
+  ;; that's the export function
+  ;; Evil nerd commenter key bindings
+  ;; (global-set-key (kbd "M-;") 'evilnc-comment-or-uncomment-lines)
+  ;; (global-set-key (kbd "M-:") 'evilnc-comment-or-uncomment-to-the-line)
+  ;; (global-set-key (kbd "C-c c") 'evilnc-copy-and-comment-lines)
+  ;; (global-set-key (kbd "C-c p") nil)
+  ;;   (define-key evil-normal-state-map ",cp" 'evilnc-comment-or-uncomment-paragraphs)
+  ;;   (define-key evil-normal-state-map ",cr" 'comment-or-uncomment-region))
+  ;; org mode
+#+END_SRC
+
+* Package Settings
+Now we have a series of package-specific settings. There is no
+particular order, but some package might have dependency on others, or
+modify the behavior of others. In the later case, I try to state
+explicitly in the text that cross modification happens, otherwise it
+would be a headache to keep track of all the inter-dependencies.
+
+** Yasnippet
+Yasnippet is a snippet manager for Emacs. It works by expanding short
+specific keywords into predetermined structures which are called
+"snippets". For example, one can enter "src" in the =org-mode= buffer
+and press =TAB=, and yasnippet will expand "src" into the standard
+=org-mode= source block "#+BEGIN_SRC ... #+END_SRC". It is very handy
+when entering repetitive code blocks or structures, and minimizes
+mistakes in the process.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package yasnippet 
+    :init
+    (progn
+      (defun yas-advise-indent-function (function-symbol)
+        (eval `(defadvice ,function-symbol (around yas/try-expand-first activate)
+                 ,(format
+                   "Try to expand a snippet before point, then call `%s' as usual"
+                   function-symbol)
+                 (let ((yas/fallback-behavior nil))
+                   (unless (and (interactive-p)
+                                (yas-expand))
+                     ad-do-it)))))
+
+      (defun yas-my-initialize ()
+        (setq yas-indent-line 'auto)
+        (yas-advise-indent-function 'cdlatex-tab)
+        (yas-advise-indent-function 'org-cycle)
+        (yas-advise-indent-function 'org-try-cdlatex-tab)
+        (yas-load-directory "~/.emacs.d/snippets")
+        (yas-minor-mode-on))
+
+      (defalias 'yas/current-snippet-table 'yas--get-snippet-tables)
+      (add-hook 'org-mode-hook 'yas-my-initialize)
+      (add-hook 'c-mode-common-hook 'yas-my-initialize)
+      (add-hook 'python-mode-hook 'yas-my-initialize)
+      (add-hook 'haskell-mode-hook 'yas-my-initialize)
+  ))
+    ;;  (add-to-list 'ac-sources 'ac-source-yasnippet))
+    ;; (progn
+    ;;   ;; (yas-global-mode nil)
+    ;;   ;; (yas/minor-mode-on)
+    ;;   )
+#+END_SRC
+
+** Ace-window
+This package is a way to jump between frames using something similar
+to ace-jump-mode. When there is only 2 windows open, this acts similar
+to the vanilla =other-window= function which is bound to =C-x
+o=. However, when there are more than 2 windows, a key will be shown
+at the upper left corner and pressing the corresponding key will jump
+to that window instantly, instead of looping over the available
+windows like =other-window= does. It is great when there are a few
+windows open and one wants to jump between them quickly, but its
+efficiency is not so big when there are only 3 windows and one only
+needs to be jumping between 2 of them. Maybe need further tinkering...
+#+BEGIN_SRC emacs-lisp
+  (use-package ace-window
+    :init
+    (global-set-key (kbd "M-s") 'ace-window) ; cursor to a given window
+  )
+#+END_SRC
+
+** Company-mode
+This is an auto-complete framework for Emacs. There are two
+auto-complete frameworks in the wild there right now. One is the
+classic =auto-complete= which has been great but its programmer
+interface is said to be not very good. The other is =company-mode=
+which is short for "Complete-anything mode". I've been playing around
+with these two and while I haven't made up my mind yet, the C++
+completion by =company-mode= is currently having the upper hand. Here
+is the config:
+#+BEGIN_SRC emacs-lisp :tangle no
+  (use-package company
+    :init
+    (add-hook 'after-init-hook 'global-company-mode)
+    :config
+    (progn
+      (defun check-expansion ()
+        (save-excursion
+          (if (looking-at "\\_>") t
+            (backward-char 1)
+            (if (looking-at "\\.") t
+              (backward-char 1)
+              (if (looking-at "->") t nil)))))
+
+      (defun do-yas-expand ()
+        (let ((yas/fallback-behavior 'return-nil))
+          (yas/expand)))
+
+      (defun tab-indent-or-complete ()
+        (interactive)
+        (if (minibufferp)
+            (minibuffer-complete)
+          (if (or (not yas/minor-mode)
+                  (null (do-yas-expand)))
+              (if (check-expansion)
+                  (company-complete-common)
+                (indent-for-tab-command)))))
+
+      (global-set-key (kbd "TAB") 'tab-indent-or-complete)
+      (defun my-setup-company ()
+        (setq company-backends (delete 'company-semantic company-backends))
+        (setq company-backends (delete 'company-eclim company-backends))
+        ;; (add-to-list 'company-backends 'company-elisp)
+        (use-package company-c-headers)
+        (add-to-list 'company-backends 'company-c-headers)
+        (add-to-list 'company-c-headers-path-system "/usr/include/c++/4.9.2/")
+        (setq company-idle-delay 0)
+        ;; (define-key company-active-map (kbd "C-n") 'company-select-next)
+        ;; (define-key company-active-map (kbd "C-p") 'company-select-previous)
+      )
+      (add-hook 'company-mode-hook 'my-setup-company)
+      ))
+#+END_SRC
+
+There is now a serious bug for =company-mode= which prevents me from
+using it further. When =flyspell-mode= is on, the candidate list for
+completion will sometimes not appear or cause the cursor to move to
+weird places.
+
+** Flyspell
+Flyspell is an automatic spell checker that checks the English
+spelling of words in the current buffer. It runs an instance of
+=aspell= in the background. Note that this mode might have conflicts
+with =auto-complete= or =company-mode=. There is a workaround for the
+former, but it is not clear if there is a solution for the later.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flyspell
+    :init
+    (progn
+      (dolist (hook '(text-mode-hook))
+        (add-hook hook (lambda () (flyspell-mode 1))))
+      (dolist (hook '(change-log-mode-hook log-edit-mode-hook))
+        (add-hook hook (lambda () (flyspell-mode -1))))
+      (dolist (hook '(c++-mode-hook python-mode-hook haskell-mode-hook emacs-lisp-mode-hook))
+        (add-hook hook (lambda () (flyspell-prog-mode)))))
+    :config
+    (progn
+      (setq flyspell-issue-message-flag nil)))
+#+END_SRC
+
+** Auto-complete
+Again, I'm swaying between =company-mode= and =auto-complete= and here
+is my configuration for =auto-complete=. This is a configuration that
+is known to work, and currently has less bug than =company-mode=.
+#+BEGIN_SRC emacs-lisp
+  (use-package auto-complete
+   :init
+   (progn
+     (require 'auto-complete-config)
+     (defun ac-common-setup ()
+       (setq ac-sources (append ac-sources '(ac-source-filename
+                                             ac-source-words-in-same-mode-buffers
+                                             ac-source-dictionary
+                                             ac-source-gtags
+                                             ac-source-yasnippet)))
+       (setq ac-sources (delete-dups ac-sources)))
+     ;; (defun ac-cc-mode-setup ()
+     ;;   (add-to-list 'ac-sources 'ac-source-semantic))
+     ;; (ac-config-default)
+     (add-hook 'emacs-lisp-mode-hook 'ac-emacs-lisp-mode-setup)
+     ;; (add-hook 'c-mode-common-hook 'ac-cc-mode-setup)
+     (add-hook 'ruby-mode-hook 'ac-ruby-mode-setup)
+     (add-hook 'css-mode-hook 'ac-css-mode-setup)
+     (add-hook 'auto-complete-mode-hook 'ac-common-setup)
+     ;; Load default auto-complete settings
+     (global-auto-complete-mode)
+     ;;(add-to-list 'ac-sources 'ac-source-filename)
+     ;;(add-to-list 'ac-sources 'ac-source-yasnippet)
+     ;;(add-to-list 'ac-sources 'ac-source-gtags)
+     ;; Keymap settings 
+     (setq ac-use-menu-map t)
+     (define-key ac-menu-map "\C-n" 'ac-next)
+     (define-key ac-menu-map "\C-p" 'ac-previous)
+     (ac-set-trigger-key "TAB")
+     (ac-flyspell-workaround)
+
+     (use-package auto-complete-clang
+       :init
+       (progn 
+         (defun ac-cc-mode-setup ()
+           ;; (setq ac-clang-complete-executable "/usr/bin/clang-complete")
+           (add-to-list 'ac-sources 'ac-source-clang))
+           ;; (ac-clang-launch-completion-process))
+         (add-hook 'c++-mode-hook 'ac-cc-mode-setup)
+         (add-to-list 'ac-clang-flags "-I/usr/include/c++/4.9.2/")
+         (add-to-list 'ac-clang-flags "-I.")
+         (add-to-list 'ac-clang-flags "-I./include")
+         (add-to-list 'ac-clang-flags "-I../include")
+         ))
+     ))
+#+END_SRC
+
+** Helm
+Helm is an extraordinary package. It provides many functionalities
+under the same framework. A comprehensive guide can be found [[http://tuhdo.github.io/helm-intro.html][here]].
+#+BEGIN_SRC emacs-lisp
+  (use-package helm
+    :init
+    (progn
+      (require 'helm-config)
+
+      ;; The default "C-x c" is quite close to "C-x C-c", which quits Emacs.
+      ;; Changed to "C-c h". Note: We must set "C-c h" globally, because we
+      ;; cannot change `helm-command-prefix-key' once `helm-config' is loaded.
+      (global-set-key (kbd "C-c h") 'helm-command-prefix)
+      (global-unset-key (kbd "C-x c"))
+      
+      (global-set-key (kbd "C-x b") 'helm-mini)
+      (global-set-key (kbd "M-y") 'helm-show-kill-ring)
+      (global-set-key (kbd "M-x") 'helm-M-x)
+      (setq helm-M-x-fuzzy-match t
+            helm-buffers-fuzzy-matching t
+            helm-recentf-fuzzy-match t)
+
+      (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action) ; rebind tab to run persistent action
+      (define-key helm-map (kbd "C-i") 'helm-execute-persistent-action) ; make TAB works in terminal
+      (define-key helm-map (kbd "C-z")  'helm-select-action) ; list actions using C-z
+
+      (when (executable-find "curl")
+        (setq helm-google-suggest-use-curl-p t))
+
+      (setq helm-split-window-in-side-p           t ; open helm buffer inside current window, not occupy whole other window
+            helm-move-to-line-cycle-in-source     t ; move to end or beginning of source when reaching top or bottom of source.
+            helm-ff-search-library-in-sexp        t ; search for library in `require' and `declare-function' sexp.
+            helm-scroll-amount                    8 ; scroll 8 lines other window using M-<next>/M-<prior>
+            helm-ff-file-name-history-use-recentf t)
+
+      (helm-mode 1)
+  ))
+#+END_SRC
+
+** Projectile
+Projectile is a project management package for Emacs. It has nice
+project navigation and integration with other packages. Here is
+actually a minimal setting with integration with the =perspective= package.
+#+BEGIN_SRC emacs-lisp
+  (use-package projectile
+    :init
+    (progn
+      (use-package perspective)
+      (use-package persp-projectile)
+      (persp-mode)
+      (projectile-global-mode)
+      (helm-projectile-on))
+    :config
+    (progn
+      ;; (global-set-key (kbd "C-c p a") 'projectile-ag)
+      ;; (global-set-key (kbd "C-c p A") 'projectile-ack)
+      ;; (define-key projectile-mode-map (kbd "C-c p a") 'projectile-ag)
+      ;; (define-key projectile-mode-map (kbd "C-c p A") 'projectile-ack)
+      ;; (define-key projectile-mode-map (kbd "C-c p f") 'helm-projectile)
+      (define-key projectile-mode-map (kbd "C-c p w") 'projectile-persp-switch-project)
+      (setq projectile-enable-caching t)
+      ))
+#+END_SRC
+
+** Magit
+=magit= is the best git wrapper, period. It is actually better than
+the official git interface, since the command line interface is a
+headache for most people. Magit makes interacting with git a
+breeze. The config is very simple too:
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+  :commands magit-status
+  :init
+  (global-set-key (kbd "C-c g") 'magit-status))
+#+END_SRC
+
+* Language modes
+These are less specific settings than the above section, oriented not
+to a package but to a language mode. Each subsection might contain
+multiple small packages that works together to make the language mode more useful.
+
+** C/C++/Cuda mode
+First make =.h= files use C++ mode instead of C mode
+#+BEGIN_SRC emacs-lisp
+;; Treat all .h files as c++ files
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode)) 
+#+END_SRC
+
+Then we load =google-c-style=, =ggtags-mode=, and =cpputils-cmake=
+when entering C or C++ mode
+#+BEGIN_SRC emacs-lisp
+  (use-package google-c-style)
+  (use-package cpputils-cmake)
+  (use-package ggtags)
+  (add-hook 'c-mode-common-hook (lambda () (progn
+                                             (cppcm-reload-all)
+                                             (google-set-c-style)
+                                             (ggtags-mode 1)
+                                             (setq ggtags-enable-navigation-keys nil))))
+#+END_SRC
+
+Here are some further config for =cpputils-cmake=
+#+BEGIN_SRC emacs-lisp
+    (require 's)
+    (defun my-chop-include (text) 
+      (s-chop-prefix "-I" text))
+
+    (add-hook 'cppcm-reload-all-hook 
+              (lambda () 
+                (setq flycheck-clang-include-path (append (mapcar 'my-chop-include cppcm-include-dirs) 
+                                                          (mapcar 'my-chop-include cppcm-preprocess-defines)))
+                (setq flycheck-nvcc-include-path (append (mapcar 'my-chop-include cppcm-include-dirs)))
+                (setq ac-clang-cflags ac-clang-flags)))
+
+    ;; (global-set-key (kbd "C-c C-g")
+    ;;              '(lambda ()(interactive) (gud-gdb (concat "gdb --fullname " (cppcm-get-exe-path-current-buffer)))))
+    (setq cppcm-compile-list '(cppcm-compile-in-root-build-dir cppcm-compile cppcm-compile-in-current-exe-dir))
+    (setq compilation-read-command nil)
+
+    ;; Compile with F5
+    (global-set-key (kbd "<f5>") 'cppcm-compile)
+
+    (defun my-cppcm-test (test-dir)
+      "Run the test suite in test-dir"
+      (let ((default-directory test-dir)
+            (compile-command "make check")) 
+        (call-interactively 'compile)))
+
+    ;; Run all tests with F6
+    (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
+#+END_SRC
+
+* Custom File
+Emacs has a built-in customization interface. All the customizations
+done through it will be saved in the init file in a rather ugly form,
+and it is suggested that the user should not to modify that
+section. Since our init file is tangled from this org file, we want to
+keep that customization file separate. This can be done as follows:
+
+Because customizations usually involves package specifics, we want to
+defer this block to the end of the initialization process. A side
+effect is that if the init process is somehow interrupted by an error,
+Emacs will not be able to see this file, therefore not able to write
+custom configs. This kind of behavior signals an error in one of the
+previous parts of initialization process, and you should examine it
+carefully to see where the problem is.
+
+#+BEGIN_SRC emacs-lisp
+  ;; Set customized variables here
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+#+END_SRC
