@@ -119,6 +119,9 @@ beginners starting with Emacs find it a monster to use).
   
   ;; wrap email body
   (add-hook 'mail-mode-hook 'turn-on-auto-fill)
+
+  ;; Searches ignore case
+  (setq case-fold-search t)
 #+END_SRC
 
 =ibuffer= is a built-in command in Emacs since Emacs 22. It is a
@@ -131,15 +134,35 @@ old buffer list. We rebind it here
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 #+END_SRC
 
-Start session management to have cross-session history sharing. Also
-start =emacs-server= if it is not started already, so that we can use
-=emacsclient= to connect to it
+This block makes the "beginning of line" of vanilla Emacs smarter. It
+is taken from [[http://emacsredux.com/blog/2013/05/22/smarter-navigation-to-the-beginning-of-a-line/][here]].
 #+BEGIN_SRC emacs-lisp
-  ;; (require 'session)  
-  (add-hook 'after-init-hook 'session-initialize)
-  (load "server")
-  (unless (server-running-p)
-    (server-start))
+(defun smarter-move-beginning-of-line (arg)
+  "Move point back to indentation of beginning of line.
+
+Move point to the first non-whitespace character on this line.
+If point is already there, move to the beginning of the line.
+Effectively toggle between the first non-whitespace character and
+the beginning of the line.
+
+If ARG is not nil or 1, move forward ARG - 1 lines first.  If
+point reaches the beginning or end of the buffer, stop there."
+  (interactive "^p")
+  (setq arg (or arg 1))
+
+  ;; Move lines first
+  (when (/= arg 1)
+    (let ((line-move-visual nil))
+      (forward-line (1- arg))))
+
+  (let ((orig-point (point)))
+    (back-to-indentation)
+    (when (= orig-point (point))
+      (move-beginning-of-line 1))))
+
+;; remap C-a to `smarter-move-beginning-of-line'
+(global-set-key [remap move-beginning-of-line]
+                'smarter-move-beginning-of-line)
 #+END_SRC
 
 * Package Repositories
@@ -218,13 +241,13 @@ global variable, =defvar= is the correct command to use instead of
       evil-surround
       flx
       flx-ido
-      flycheck
       fold-dwim
       geiser
       ggtags
       google-c-style
       haskell-mode
       helm
+      helm-ag
       helm-projectile
       ido-vertical-mode
       js2-mode
@@ -232,7 +255,6 @@ global variable, =defvar= is the correct command to use instead of
       magit
       markdown-mode
       neotree
-      nlinum
       org
       org-jekyll
       ox-reveal
@@ -244,6 +266,7 @@ global variable, =defvar= is the correct command to use instead of
       rtags
       session
       slime
+      smartparens
       smart-mode-line
       smex
       solarized-theme
@@ -325,12 +348,17 @@ the list of font families in the system. If it is found then we set it
 as the default font for both the initial frame and any new frame that
 Emacs creates.
 
+Edit: This method has problems with =emacs --daemon= since if Emacs is
+started in daemon mode then it will not see the font. Now the font is
+mandatory and set to Consolas by default.
+
 #+BEGIN_SRC emacs-lisp
-(when (member "Consolas" (font-family-list))
+  ;; (when (member "Consolas" (font-family-list))
   (add-to-list 'initial-frame-alist '(font . "Consolas-10"))
   (add-to-list 'default-frame-alist '(font . "Consolas-10"))
   (defvar my-font-family "Consolas")
-  (defvar my-font-size 100))
+  (defvar my-font-size 100)
+  ;; )
 #+END_SRC
 
 ** Theme
@@ -341,7 +369,18 @@ conditions. The following code loads =solarized-dark= as the default
 theme.
 
 #+BEGIN_SRC emacs-lisp
-(load-theme 'solarized-dark t)
+  ;; (defun my-load-theme (&optional frame)
+  ;;   (load-theme 'solarized-dark t))
+
+  ;; (defun my-reload-theme (frame)
+  ;;   (select-frame frame)
+  ;;   (my-load-theme frame))
+
+  (if (daemonp)
+      (add-hook 'after-make-frame-functions
+                (lambda (frame)
+                  (load-theme 'solarized-dark t)))
+    (load-theme 'solarized-dark t))
 #+END_SRC
 
 Note that Solarized theme will require 24bit color support in
@@ -364,6 +403,7 @@ package config which uses =use-package=!)
     :init
     (progn 
       (setq sml/theme 'dark)
+      (setq sml/no-confirm-load-theme t)
       (if after-init-time (sml/setup)
         (add-hook 'after-init-hook 'sml/setup))))
 #+END_SRC
@@ -388,7 +428,7 @@ time. The =tabbar= package solves this problem and is the best I've found.
       (global-set-key [\M-right] 'tabbar-forward-tab)
       (global-set-key [\M-up] 'tabbar-buffer)
       (global-set-key [\M-down] 'tabbar-forward-group)
-      
+
       ;; Set tabbar faces
       (set-face-attribute
        'tabbar-selected nil
@@ -410,6 +450,9 @@ time. The =tabbar= package solves this problem and is the best I've found.
       (set-face-attribute
        'tabbar-button nil
        :box nil)
+
+      ;; Set separator size
+      (setq tabbar-separator (quote (0.5)))
       ))
 #+END_SRC
 
@@ -420,14 +463,15 @@ needed for tabbar. The config is [[tabbar-evil][here]].
 The following block shows line numbers to the left of the buffer. It
 is usually a good thing to have line numbers available to refer
 to. I'm still not sure if =nlinum= or =linum= is better at displaying
-the line numbers more efficiently. Here we use =nlinum=.
+the line numbers more efficiently. Here we use =linum=.
 
 #+BEGIN_SRC emacs-lisp
-  (use-package nlinum
+  (use-package linum
     :init
     (progn
       ;;(nlinum-mode 1)
-      (global-nlinum-mode 1)
+      ;; (line-number-mode 1)
+      (global-linum-mode 1)
       ;;       (use-package linum-relative
       ;;         :ensure linum-relative)
       ))
@@ -616,6 +660,13 @@ block for ox-publish:
 	     :publishing-function org-latex-publish-to-pdf)
 	    ("notes" :components ("notes-html" "notes-pdf"))
 	    )))
+#+END_SRC
+
+** Markdown Export
+I'd like to add export to markdown mode for ease of writing a
+README.md for github. Here is how
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'org-export-backends 'md)
 #+END_SRC
 
 ** External agenda update
@@ -1093,7 +1144,9 @@ under the same framework. A comprehensive guide can be found [[http://tuhdo.gith
             helm-move-to-line-cycle-in-source     t ; move to end or beginning of source when reaching top or bottom of source.
             helm-ff-search-library-in-sexp        t ; search for library in `require' and `declare-function' sexp.
             helm-scroll-amount                    8 ; scroll 8 lines other window using M-<next>/M-<prior>
-            helm-ff-file-name-history-use-recentf t)
+            helm-ff-file-name-history-use-recentf t
+            helm-quick-update                     t ; Update helm buffer without loading the out-of-screen entries
+      )
 
       (helm-mode 1)
   ))
@@ -1363,6 +1416,38 @@ Here are some further config for =cpputils-cmake=
     (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
 #+END_SRC
 
+** Misc modes
+These are not necessarily language modes but some mode lists that maps
+file names to corresponding modes.
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'auto-mode-alist '("\\.prf\\'" . sh-mode))
+  (add-to-list 'auto-mode-alist '("\\.zsh\\'" . sh-mode))
+  (add-to-list 'auto-mode-alist '("PKGBUILD" . pkgbuild-mode))
+
+  ;; cmake mode
+  (use-package cmake-mode
+    :commands cmake-mode
+    :init
+    (progn
+      (add-to-list 'auto-mode-alist '("CMakeLists\\.txt\\'" . cmake-mode))
+      (add-to-list 'auto-mode-alist '("\\.cmake\\'" . cmake-mode))))
+
+  ;; lua mode
+  (use-package lua-mode
+    :mode "\\.lua\\'")
+
+  ;; markdown mode
+  (use-package markdown-mode
+    :mode "\\.md\\'")
+
+  ;; php mode
+  (use-package php-mode
+    :mode "\\.php[345]?$")
+
+  ;; mutt means email mode
+  (add-to-list 'auto-mode-alist '("/mutt" . mail-mode))
+#+END_SRC
+
 * Custom File
 Emacs has a built-in customization interface. All the customizations
 done through it will be saved in the init file in a rather ugly form,
@@ -1382,6 +1467,17 @@ carefully to see where the problem is.
   ;; Set customized variables here
   (setq custom-file "~/.emacs.d/custom.el")
   (load custom-file)
+#+END_SRC
+
+* Start Server and Session Management
+After everything is settled, we need to start Emacs server and load
+the =session.el= to support cross-session history.
+#+BEGIN_SRC emacs-lisp
+  ;; (require 'session)  
+  (add-hook 'after-init-hook 'session-initialize)
+  (load "server")
+  (unless (server-running-p)
+    (server-start))
 #+END_SRC
 
 * Unfinished
