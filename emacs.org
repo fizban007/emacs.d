@@ -231,6 +231,7 @@ global variable, =defvar= is the correct command to use instead of
       cpputils-cmake
       ctable
       dash
+      dired+
       epc
       epl
       ess
@@ -241,7 +242,10 @@ global variable, =defvar= is the correct command to use instead of
       evil-surround
       flx
       flx-ido
+      flycheck
+      flycheck-google-cpplint
       fold-dwim
+      function-args
       geiser
       ggtags
       google-c-style
@@ -249,6 +253,7 @@ global variable, =defvar= is the correct command to use instead of
       helm
       helm-ag
       helm-projectile
+      helm-gtags
       ido-vertical-mode
       js2-mode
       lua-mode
@@ -258,12 +263,12 @@ global variable, =defvar= is the correct command to use instead of
       org
       org-jekyll
       ox-reveal
+      paradox
       paredit
       pkgbuild-mode
       popup
       projectile
       request
-      rtags
       session
       slime
       smartparens
@@ -273,6 +278,7 @@ global variable, =defvar= is the correct command to use instead of
       tabbar
       undo-tree
       use-package
+      wanderlust
       websocket
       wgrep
       wgrep-ag
@@ -762,6 +768,7 @@ to satisfy my needs.
     ;; (require 'evil-nerd-commenter)
     :config
     (progn 
+      (add-hook 'prog-mode-hook 'hs-minor-mode)
       (use-package evil-surround
         :init
         (progn 
@@ -897,6 +904,14 @@ particular order, but some package might have dependency on others, or
 modify the behavior of others. In the later case, I try to state
 explicitly in the text that cross modification happens, otherwise it
 would be a headache to keep track of all the inter-dependencies.
+
+** Paradox
+Paradox is a package manager which is better than the built-in
+one. This is simply a one-line config which enables access to github with tokens
+#+BEGIN_SRC emacs-lisp
+  (setq paradox-github-token "99f28325b00944af3822a25547380279334b91a4")
+  (setq paradox-automatically-star t)
+#+END_SRC
 
 ** Yasnippet
 Yasnippet is a snippet manager for Emacs. It works by expanding short
@@ -1075,11 +1090,11 @@ is known to work, and currently has less bug than =company-mode=.
                                              ac-source-gtags
                                              ac-source-yasnippet)))
        (setq ac-sources (delete-dups ac-sources)))
-     ;; (defun ac-cc-mode-setup ()
-     ;;   (add-to-list 'ac-sources 'ac-source-semantic))
+     (defun ac-cc-mode-setup ()
+       (add-to-list 'ac-sources 'ac-source-semantic))
      ;; (ac-config-default)
      (add-hook 'emacs-lisp-mode-hook 'ac-emacs-lisp-mode-setup)
-     ;; (add-hook 'c-mode-common-hook 'ac-cc-mode-setup)
+     (add-hook 'c-mode-common-hook 'ac-cc-mode-setup)
      (add-hook 'ruby-mode-hook 'ac-ruby-mode-setup)
      (add-hook 'css-mode-hook 'ac-css-mode-setup)
      (add-hook 'auto-complete-mode-hook 'ac-common-setup)
@@ -1095,19 +1110,19 @@ is known to work, and currently has less bug than =company-mode=.
      (ac-set-trigger-key "TAB")
      (ac-flyspell-workaround)
 
-     (use-package auto-complete-clang
-       :init
-       (progn 
-         (defun ac-cc-mode-setup ()
-           ;; (setq ac-clang-complete-executable "/usr/bin/clang-complete")
-           (add-to-list 'ac-sources 'ac-source-clang))
-           ;; (ac-clang-launch-completion-process))
-         (add-hook 'c++-mode-hook 'ac-cc-mode-setup)
-         (add-to-list 'ac-clang-flags "-I/usr/include/c++/4.9.2/")
-         (add-to-list 'ac-clang-flags "-I.")
-         (add-to-list 'ac-clang-flags "-I./include")
-         (add-to-list 'ac-clang-flags "-I../include")
-         ))
+     ;; (use-package auto-complete-clang
+     ;;   :init
+     ;;   (progn 
+     ;;     ;; (defun ac-cc-mode-setup ()
+     ;;     ;;   ;; (setq ac-clang-complete-executable "/usr/bin/clang-complete")
+     ;;     ;;   (add-to-list 'ac-sources 'ac-source-clang))
+     ;;     ;;   ;; (ac-clang-launch-completion-process))
+     ;;     ;; (add-hook 'c++-mode-hook 'ac-cc-mode-setup)
+     ;;     (add-to-list 'ac-clang-flags "-I/usr/include/c++/4.9.2/")
+     ;;     (add-to-list 'ac-clang-flags "-I.")
+     ;;     (add-to-list 'ac-clang-flags "-I./include")
+     ;;     (add-to-list 'ac-clang-flags "-I../include")
+     ;;     ))
      ))
 #+END_SRC
 
@@ -1360,6 +1375,186 @@ lot of configurations here which I don't want to talk about at the moment...
 
 *** TODO Finish the documentation of these LaTeX settings
 
+** Wanderlust
+Wanderlust is a IMAP compatible email client in Emacs. Here is a
+configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old site]].
+#+BEGIN_SRC emacs-lisp
+    ;; wanderlust
+    (autoload 'wl "wl" "Wanderlust" t)
+    (autoload 'wl-other-frame "wl" "Wanderlust on new frame." t)
+    (autoload 'wl-draft "wl-draft" "Write draft with Wanderlust." t)
+
+    ;; IMAP
+    (setq elmo-imap4-default-server "imap.gmail.com")
+    (setq elmo-imap4-default-user "yc2627@columbia.edu") 
+    (setq elmo-imap4-default-authenticate-type 'clear) 
+    (setq elmo-imap4-default-port '993)
+    (setq elmo-imap4-default-stream-type 'ssl)
+
+    (setq elmo-imap4-use-modified-utf7 t) 
+
+    ;; SMTP
+    (setq wl-smtp-connection-type 'starttls)
+    (setq wl-smtp-posting-port 587)
+    (setq wl-smtp-authenticate-type "plain")
+    (setq wl-smtp-posting-user "yc2627@columbia.edu")
+    (setq wl-smtp-posting-server "smtp.gmail.com")
+    (setq wl-local-domain "gmail.com")
+
+    (setq wl-default-folder "%inbox")
+    (setq wl-default-spec "%")
+    (setq wl-draft-folder "+draft") ; Local drafts
+    (setq wl-trash-folder "%[Gmail]/Trash")
+
+    (setq wl-folder-check-async t) 
+    (setq wl-from "Alexander Chen <yc2627@columbia.edu>")
+
+    (setq elmo-imap4-use-modified-utf7 t)
+
+    (autoload 'wl-user-agent-compose "wl-draft" nil t)
+    (if (boundp 'mail-user-agent)
+        (setq mail-user-agent 'wl-user-agent))
+    (if (fboundp 'define-mail-user-agent)
+        (define-mail-user-agent
+          'wl-user-agent
+          'wl-user-agent-compose
+          'wl-draft-send
+          'wl-draft-kill
+          'mail-send-hook))
+
+    (setq
+      wl-forward-subject-prefix "Fwd: " )    ;; use "Fwd: " not "Forward: "
+
+    ;; hide many fields from message buffers
+    (setq wl-message-ignored-field-list '("^.*:")
+          wl-message-visible-field-list
+          '("^\\(To\\|Cc\\):"
+            "^Subject:"
+            "^\\(From\\|Reply-To\\):"
+            "^Organization:"
+            "^Message-Id:"
+            "^\\(Posted\\|Date\\):"
+            )
+          wl-message-sort-field-list
+          '("^From"
+            "^Organization:"
+            "^X-Attribution:"
+            "^Subject"
+            "^Date"
+            "^To"
+            "^Cc"))
+
+  ;; from a WL-mailinglist post by David Bremner
+
+  ;; Invert behaviour of with and without argument replies.
+  ;; just the author
+  (setq wl-draft-reply-without-argument-list
+    '(("Reply-To" ("Reply-To") nil nil)
+       ("Mail-Reply-To" ("Mail-Reply-To") nil nil)
+       ("From" ("From") nil nil)))
+
+
+  ;; bombard the world
+  (setq wl-draft-reply-with-argument-list
+    '(("Followup-To" nil nil ("Followup-To"))
+       ("Mail-Followup-To" ("Mail-Followup-To") nil ("Newsgroups"))
+       ("Reply-To" ("Reply-To") ("To" "Cc" "From") ("Newsgroups"))
+       ("From" ("From") ("To" "Cc") ("Newsgroups"))))
+
+  ;; Use emacs state mode in wl
+  ;; (add-to-list 'evil-emacs-state-modes 'wl
+
+  ;; Reply buffer style
+  (setq wl-draft-reply-buffer-style 'full)
+
+  ;; Use emacs state in summary mode
+  (add-hook 'wl-summary-mode-hook 'evil-emacs-state)
+  (add-hook 'wl-folder-mode-hook 'evil-emacs-state)
+
+  ;; Hide mime buttons by default
+  (setq mime-view-buttons-visible nil)
+#+END_SRC
+
+** Semantic mode
+This section turns on Semantic mode globally. This might cause
+slow-downs and other hazards for Emacs, but semantic mode remains one
+of the best code analyze solutions in Emacs.
+#+BEGIN_SRC emacs-lisp
+  (use-package cc-mode)
+  (use-package semantic
+    :init
+    (progn
+      (use-package semantic/bovine/c)
+      (global-semanticdb-minor-mode 1)
+      (global-semantic-idle-scheduler-mode 1)
+      (set-default 'semantic-case-fold t)
+
+      (semantic-mode 1)
+      (semantic-add-system-include "/usr/include")
+      (semantic-add-system-include "/usr/include/c++/4.9.2")
+      ;; (add-to-hook 'c-mode-common-hook (lambda ()
+      ;;                                    (add-to-list 'ac-sources 'ac-source-semantic)))
+  ))
+#+END_SRC
+
+Since we use semantic mode, it is good to also enable function-args
+mode which is a good way to show inline function hint for C/C++
+languages.
+#+BEGIN_SRC emacs-lisp
+    (use-package function-args
+      :init
+      (progn
+        (fa-config-default)
+        ;; (define-key c-mode-map  ([control tab]) 'moo-complete)
+        ;; (define-key c++-mode-map  ([control tab]) 'moo-complete)
+        ;; (define-key c-mode-map (kbd "M-o")  'fa-show)
+        ;; (define-key c++-mode-map (kbd "M-o")  'fa-show)
+        ))
+#+END_SRC
+
+** EDE Projects
+First we enable EDE mode globally.
+#+BEGIN_SRC emacs-lisp
+(use-package ede
+  :init
+  (global-ede-mode))
+#+END_SRC
+
+Here we define projects for EDE mode. This is necessary for Semantic
+to find the correct include files etc.
+#+BEGIN_SRC emacs-lisp
+  (ede-cpp-root-project "Pulsar"
+                        :file "~/Programs/Pulsar/CMakeLists.txt"
+                        :include-path '("/include")
+                        :system-include-path '("/usr/include"))
+#+END_SRC
+
+** Flycheck
+Here we setup Flycheck to automatically check for language problems,
+especially C++.
+
+First we turn on Flycheck for all buffers
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'after-init-hook #'global-flycheck-mode)
+#+END_SRC
+
+Now add google c++ style checker
+#+BEGIN_SRC emacs-lisp
+    (eval-after-load 'flycheck
+      '(progn
+         (require 'flycheck-google-cpplint)
+         ;; Add Google C++ Style checker.
+         ;; In default, syntax checked by Clang and Cppcheck.
+         (flycheck-add-next-checker 'c/c++-cppcheck
+                                    ;; '(warnings-only . c/c++-googlelint)
+                                    'c/c++-googlelint 'append)
+         (setq flycheck-c/c++-googlelint-executable "/usr/bin/cpplint")
+         (setq flycheck-googlelint-verbose "3"
+               flycheck-googlelint-filter "-whitespace,+whitespace/braces"
+               flycheck-googlelint-linelength "120")
+         ))
+#+END_SRC
+
 * Language modes
 These are less specific settings than the above section, oriented not
 to a package but to a language mode. Each subsection might contain
@@ -1379,6 +1574,8 @@ when entering C or C++ mode
   (use-package cpputils-cmake)
   (use-package ggtags)
   (add-hook 'c-mode-common-hook (lambda () (progn
+                                             (add-to-list 'flycheck-disabled-checkers 'c/c++-clang)
+                                             (add-to-list 'flycheck-disabled-checkers 'c/c++-gcc)
                                              (cppcm-reload-all)
                                              (google-set-c-style)
                                              (ggtags-mode 1)
@@ -1387,33 +1584,34 @@ when entering C or C++ mode
 
 Here are some further config for =cpputils-cmake=
 #+BEGIN_SRC emacs-lisp
-    (require 's)
-    (defun my-chop-include (text) 
-      (s-chop-prefix "-I" text))
+      (require 's)
+      (defun my-chop-include (text) 
+        (s-chop-prefix "-I" text))
 
-    (add-hook 'cppcm-reload-all-hook 
-              (lambda () 
-                (setq flycheck-clang-include-path (append (mapcar 'my-chop-include cppcm-include-dirs) 
-                                                          (mapcar 'my-chop-include cppcm-preprocess-defines)))
-                (setq flycheck-nvcc-include-path (append (mapcar 'my-chop-include cppcm-include-dirs)))
-                (setq ac-clang-cflags ac-clang-flags)))
+      (add-hook 'cppcm-reload-all-hook 
+                (lambda () 
+                  (setq flycheck-clang-include-path (append (mapcar 'my-chop-include cppcm-include-dirs) 
+                                                            (mapcar 'my-chop-include cppcm-preprocess-defines)))
+                  (setq flycheck-nvcc-include-path (append (mapcar 'my-chop-include cppcm-include-dirs)))
+                  ;; (setq ac-clang-cflags ac-clang-flags)
+                  ))
 
-    ;; (global-set-key (kbd "C-c C-g")
-    ;;              '(lambda ()(interactive) (gud-gdb (concat "gdb --fullname " (cppcm-get-exe-path-current-buffer)))))
-    (setq cppcm-compile-list '(cppcm-compile-in-root-build-dir cppcm-compile cppcm-compile-in-current-exe-dir))
-    (setq compilation-read-command nil)
+      ;; (global-set-key (kbd "C-c C-g")
+      ;;              '(lambda ()(interactive) (gud-gdb (concat "gdb --fullname " (cppcm-get-exe-path-current-buffer)))))
+      (setq cppcm-compile-list '(cppcm-compile-in-root-build-dir cppcm-compile cppcm-compile-in-current-exe-dir))
+      (setq compilation-read-command nil)
 
-    ;; Compile with F5
-    (global-set-key (kbd "<f5>") 'cppcm-compile)
+      ;; Compile with F5
+      (global-set-key (kbd "<f5>") 'cppcm-compile)
 
-    (defun my-cppcm-test (test-dir)
-      "Run the test suite in test-dir"
-      (let ((default-directory test-dir)
-            (compile-command "make check")) 
-        (call-interactively 'compile)))
+      (defun my-cppcm-test (test-dir)
+        "Run the test suite in test-dir"
+        (let ((default-directory test-dir)
+              (compile-command "make check")) 
+          (call-interactively 'compile)))
 
-    ;; Run all tests with F6
-    (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
+      ;; Run all tests with F6
+      (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
 #+END_SRC
 
 ** Misc modes
