@@ -360,8 +360,8 @@ mandatory and set to Consolas by default.
 
 #+BEGIN_SRC emacs-lisp
   ;; (when (member "Consolas" (font-family-list))
-  (add-to-list 'initial-frame-alist '(font . "Consolas-10"))
-  (add-to-list 'default-frame-alist '(font . "Consolas-10"))
+  (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
+  (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
   (defvar my-font-family "Consolas")
   (defvar my-font-size 100)
   ;; )
