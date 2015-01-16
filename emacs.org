@@ -165,6 +165,13 @@ point reaches the beginning or end of the buffer, stop there."
                 'smarter-move-beginning-of-line)
 #+END_SRC
 
+This short block checks whether the file under edit contains a
+shebang, and if yes, makes it executable.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'after-save-hook
+  'executable-make-buffer-file-executable-if-script-p)
+#+END_SRC
+
 * Package Repositories
 First we need to set up some package repositories to establish a
 consistent way to get packages. We use the official gnu repo, as well
@@ -409,6 +416,8 @@ package config which uses =use-package=!)
     :init
     (progn 
       (setq sml/theme 'dark)
+      (setq sml/mode-width 'right)
+      (setq sml/shorten-modes t)
       (setq sml/no-confirm-load-theme t)
       (if after-init-time (sml/setup)
         (add-hook 'after-init-hook 'sml/setup))))
@@ -911,6 +920,8 @@ one. This is simply a one-line config which enables access to github with tokens
 #+BEGIN_SRC emacs-lisp
   (setq paradox-github-token "99f28325b00944af3822a25547380279334b91a4")
   (setq paradox-automatically-star t)
+  (setq paradox-execute-asynchronously t)
+  (add-to-list 'evil-emacs-state-modes 'paradox-menu-mode)
 #+END_SRC
 
 ** Yasnippet
@@ -1550,7 +1561,7 @@ Now add google c++ style checker
                                     'c/c++-googlelint 'append)
          (setq flycheck-c/c++-googlelint-executable "/usr/bin/cpplint")
          (setq flycheck-googlelint-verbose "3"
-               flycheck-googlelint-filter "-whitespace,+whitespace/braces"
+               flycheck-googlelint-filter "-whitespace,+whitespace/braces,-legal/copyright,-build/c++11"
                flycheck-googlelint-linelength "120")
          ))
 #+END_SRC
