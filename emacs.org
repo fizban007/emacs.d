@@ -116,13 +116,23 @@ beginners starting with Emacs find it a monster to use).
 
   ;; Don't produce an additional window for Ediff, but keep it in the same frame
   (setq ediff-window-setup-function 'ediff-setup-windows-plain)
-  
+  (setq ediff-split-window-function 'split-window-horizontally)
+  ;; When you quit an Ediff session with q, it just leaves the two diff
+  ;; windows around, instead of restoring the window configuration from
+  ;; when Ediff was started. Here's the (slightly hacky) code to restore
+  ;; the old window configuration:
+  (winner-mode)
+  (add-hook 'ediff-after-quit-hook-internal 'winner-undo)
+
   ;; wrap email body
   (add-hook 'mail-mode-hook 'turn-on-auto-fill)
 
   ;; Searches ignore case
   (setq case-fold-search t)
 #+END_SRC
+
+#+RESULTS:
+: t
 
 =ibuffer= is a built-in command in Emacs since Emacs 22. It is a
 drastically improved buffer list such that there is no reason to use
@@ -233,6 +243,7 @@ global variable, =defvar= is the correct command to use instead of
       cmake-mode
       company
       company-auctex
+      company-irony
       company-c-headers
       concurrent
       cpputils-cmake
@@ -262,6 +273,7 @@ global variable, =defvar= is the correct command to use instead of
       helm-projectile
       helm-gtags
       ido-vertical-mode
+      irony
       js2-mode
       lua-mode
       magit
@@ -367,10 +379,15 @@ mandatory and set to Consolas by default.
 
 #+BEGIN_SRC emacs-lisp
   ;; (when (member "Consolas" (font-family-list))
-  (add-to-list 'initial-frame-alist '(font . "Consolas-10"))
-  (add-to-list 'default-frame-alist '(font . "Consolas-10"))
-  (defvar my-font-family "Consolas")
-  (defvar my-font-size 100)
+  (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
+  (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
+  (defvar my-font-family "Consolas for Powerline")
+  ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
+  ;; (add-to-list 'default-frame-alist '(font . "Dejavu Sans Mono-9"))
+  ;; (defvar my-font-family "Dejavu Sans Mono")
+  (defvar my-font-size 90)
+  ;; (defvar my-theme 'solarized-dark)
+  (defvar my-theme 'lush)
   ;; )
 #+END_SRC
 
@@ -392,8 +409,8 @@ theme.
   (if (daemonp)
       (add-hook 'after-make-frame-functions
                 (lambda (frame)
-                  (load-theme 'solarized-dark t)))
-    (load-theme 'solarized-dark t))
+                  (load-theme my-theme t)))
+    (load-theme my-theme t))
 #+END_SRC
 
 Note that Solarized theme will require 24bit color support in
@@ -418,9 +435,18 @@ package config which uses =use-package=!)
       (setq sml/theme 'dark)
       (setq sml/mode-width 'right)
       (setq sml/shorten-modes t)
+      (setq sml/theme 'respectful)
       (setq sml/no-confirm-load-theme t)
       (if after-init-time (sml/setup)
         (add-hook 'after-init-hook 'sml/setup))))
+#+END_SRC
+
+** Powerline
+#+BEGIN_SRC emacs-lisp :tangle no
+  ;; (use-package powerline)
+  (require 'powerline)
+  (require 'powerline-evil)
+  (powerline-center-evil-theme)
 #+END_SRC
 
 ** Tabbar
@@ -447,8 +473,6 @@ time. The =tabbar= package solves this problem and is the best I've found.
       ;; Set tabbar faces
       (set-face-attribute
        'tabbar-selected nil
-       :background "#073642"
-       :foreground "#839496"
        :height 1.0
        :box nil
        :family my-font-family
@@ -456,9 +480,7 @@ time. The =tabbar= package solves this problem and is the best I've found.
 
       (set-face-attribute
        'tabbar-default nil
-       :background "#eee8d5"
-       :foreground "#586e75"
-       :height 0.9
+       :height 1.0
        :family my-font-family
        :height my-font-size)
 
@@ -467,7 +489,7 @@ time. The =tabbar= package solves this problem and is the best I've found.
        :box nil)
 
       ;; Set separator size
-      (setq tabbar-separator (quote (0.5)))
+      ;; (setq tabbar-separator (quote (0.5)))
       ))
 #+END_SRC
 
@@ -893,7 +915,29 @@ to satisfy my needs.
       (add-hook 'ecb-history-buffer-after-create-hook 'evil-motion-state)
       (add-hook 'ecb-directories-buffer-after-create-hook 'evil-motion-state)
       (add-hook 'ecb-methods-buffer-after-create-hook 'evil-motion-state)
-      (add-hook 'ecb-sources-buffer-after-create-hook 'evil-motion-state)))
+      (add-hook 'ecb-sources-buffer-after-create-hook 'evil-motion-state)
+
+      ;; Start specific modes in specific evil modes
+      (loop for (mode . state) in '((inferior-emacs-lisp-mode . emacs)
+                                    (nrepl-mode . insert)
+                                    (pylookup-mode . emacs)
+                                    (comint-mode . normal)
+                                    (shell-mode . insert)
+                                    (git-commit-mode . normal)
+                                    (paradox-menu-mode . emacs)
+                                    ;; (git-rebase-mode . emacs)
+                                    (term-mode . emacs)
+                                    (help-mode . emacs)
+                                    (helm-grep-mode . emacs)
+                                    (grep-mode . emacs)
+                                    (bc-menu-mode . emacs)
+                                    (magit-branch-manager-mode . emacs)
+                                    (rdictcc-buffer-mode . emacs)
+                                    (dired-mode . emacs)
+                                    (compilation-mode . emacs)
+                                    (wdired-mode . normal))
+            do (evil-set-initial-state mode state))
+      ))
   ;; (evilnc-default-hotkeys)
 
   ;; that's the export function
@@ -905,6 +949,8 @@ to satisfy my needs.
   ;;   (define-key evil-normal-state-map ",cp" 'evilnc-comment-or-uncomment-paragraphs)
   ;;   (define-key evil-normal-state-map ",cr" 'comment-or-uncomment-region))
   ;; org mode
+
+
 #+END_SRC
 
 * Package Settings
@@ -1014,7 +1060,7 @@ which is short for "Complete-anything mode". I've been playing around
 with these two and while I haven't made up my mind yet, the C++
 completion by =company-mode= is currently having the upper hand. Here
 is the config:
-#+BEGIN_SRC emacs-lisp :tangle no
+#+BEGIN_SRC emacs-lisp
   (use-package company
     :init
     (add-hook 'after-init-hook 'global-company-mode)
@@ -1051,8 +1097,8 @@ is the config:
         (add-to-list 'company-backends 'company-c-headers)
         (add-to-list 'company-c-headers-path-system "/usr/include/c++/4.9.2/")
         (setq company-idle-delay 0)
-        ;; (define-key company-active-map (kbd "C-n") 'company-select-next)
-        ;; (define-key company-active-map (kbd "C-p") 'company-select-previous)
+        (define-key company-active-map (kbd "C-n") 'company-select-next)
+        (define-key company-active-map (kbd "C-p") 'company-select-previous)
       )
       (add-hook 'company-mode-hook 'my-setup-company)
       ))
@@ -1089,7 +1135,7 @@ former, but it is not clear if there is a solution for the later.
 Again, I'm swaying between =company-mode= and =auto-complete= and here
 is my configuration for =auto-complete=. This is a configuration that
 is known to work, and currently has less bug than =company-mode=.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package auto-complete
    :init
    (progn
@@ -1490,7 +1536,7 @@ configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old 
 This section turns on Semantic mode globally. This might cause
 slow-downs and other hazards for Emacs, but semantic mode remains one
 of the best code analyze solutions in Emacs.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package cc-mode)
   (use-package semantic
     :init
@@ -1511,7 +1557,7 @@ of the best code analyze solutions in Emacs.
 Since we use semantic mode, it is good to also enable function-args
 mode which is a good way to show inline function hint for C/C++
 languages.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
     (use-package function-args
       :init
       (progn
@@ -1525,7 +1571,7 @@ languages.
 
 ** EDE Projects
 First we enable EDE mode globally.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
 (use-package ede
   :init
   (global-ede-mode))
@@ -1533,7 +1579,7 @@ First we enable EDE mode globally.
 
 Here we define projects for EDE mode. This is necessary for Semantic
 to find the correct include files etc.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (ede-cpp-root-project "Pulsar"
                         :file "~/Programs/Pulsar/CMakeLists.txt"
                         :include-path '("/include")
@@ -1591,6 +1637,32 @@ when entering C or C++ mode
                                              (google-set-c-style)
                                              (ggtags-mode 1)
                                              (setq ggtags-enable-navigation-keys nil))))
+#+END_SRC
+
+Load the custom cuda-mode for cuda files
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/cuda-mode")
+  (autoload 'cuda-mode "cuda-mode" "Cuda Programming Mode." t)
+  (add-to-list 'auto-mode-alist '("\\.cu\\'" . cuda-mode))
+  (add-to-list 'auto-mode-alist '("\\.cuh\\'" . cuda-mode))
+#+END_SRC
+
+Setup company mode for C-mode languages.
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'c++-mode-hook 'irony-mode)
+  (add-hook 'cuda-mode-hook 'irony-mode)
+  (add-hook 'c-mode-hook 'irony-mode)
+  (add-hook 'objc-mode-hook 'irony-mode)
+
+  ;; replace the `completion-at-point' and `complete-symbol' bindings in
+  ;; irony-mode's buffers by irony-mode's function
+  (defun my-irony-mode-hook ()
+    (define-key irony-mode-map [remap completion-at-point]
+      'irony-completion-at-point-async)
+    (define-key irony-mode-map [remap complete-symbol]
+      'irony-completion-at-point-async))
+  (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 #+END_SRC
 
 Here are some further config for =cpputils-cmake=
