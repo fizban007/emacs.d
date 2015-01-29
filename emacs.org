@@ -1424,87 +1424,87 @@ lot of configurations here which I don't want to talk about at the moment...
 Wanderlust is a IMAP compatible email client in Emacs. Here is a
 configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old site]].
 #+BEGIN_SRC emacs-lisp
-    ;; wanderlust
-    (autoload 'wl "wl" "Wanderlust" t)
-    (autoload 'wl-other-frame "wl" "Wanderlust on new frame." t)
-    (autoload 'wl-draft "wl-draft" "Write draft with Wanderlust." t)
+  ;; wanderlust
+  (autoload 'wl "wl" "Wanderlust" t)
+  (autoload 'wl-other-frame "wl" "Wanderlust on new frame." t)
+  (autoload 'wl-draft "wl-draft" "Write draft with Wanderlust." t)
 
-    ;; IMAP
-    (setq elmo-imap4-default-server "imap.gmail.com")
-    (setq elmo-imap4-default-user "yc2627@columbia.edu") 
-    (setq elmo-imap4-default-authenticate-type 'clear) 
-    (setq elmo-imap4-default-port '993)
-    (setq elmo-imap4-default-stream-type 'ssl)
+  ;; IMAP
+  (setq elmo-imap4-default-server "imap.gmail.com")
+  (setq elmo-imap4-default-user "yc2627@columbia.edu") 
+  (setq elmo-imap4-default-authenticate-type 'clear) 
+  (setq elmo-imap4-default-port '993)
+  (setq elmo-imap4-default-stream-type 'ssl)
 
-    (setq elmo-imap4-use-modified-utf7 t) 
+  (setq elmo-imap4-use-modified-utf7 t) 
 
-    ;; SMTP
-    (setq wl-smtp-connection-type 'starttls)
-    (setq wl-smtp-posting-port 587)
-    (setq wl-smtp-authenticate-type "plain")
-    (setq wl-smtp-posting-user "yc2627@columbia.edu")
-    (setq wl-smtp-posting-server "smtp.gmail.com")
-    (setq wl-local-domain "gmail.com")
+  ;; SMTP
+  (setq wl-smtp-connection-type 'starttls)
+  (setq wl-smtp-posting-port 587)
+  (setq wl-smtp-authenticate-type "plain")
+  (setq wl-smtp-posting-user "yc2627@columbia.edu")
+  (setq wl-smtp-posting-server "smtp.gmail.com")
+  (setq wl-local-domain "gmail.com")
 
-    (setq wl-default-folder "%inbox")
-    (setq wl-default-spec "%")
-    (setq wl-draft-folder "+draft") ; Local drafts
-    (setq wl-trash-folder "%[Gmail]/Trash")
+  (setq wl-default-folder "%inbox")
+  (setq wl-default-spec "%")
+  (setq wl-draft-folder "+draft") ; Local drafts
+  (setq wl-trash-folder "%[Gmail]/Trash")
 
-    (setq wl-folder-check-async t) 
-    (setq wl-from "Alexander Chen <yc2627@columbia.edu>")
+  (setq wl-folder-check-async t) 
+  (setq wl-from "Alexander Chen <yc2627@columbia.edu>")
 
-    (setq elmo-imap4-use-modified-utf7 t)
+  (setq elmo-imap4-use-modified-utf7 t)
 
-    (autoload 'wl-user-agent-compose "wl-draft" nil t)
-    (if (boundp 'mail-user-agent)
-        (setq mail-user-agent 'wl-user-agent))
-    (if (fboundp 'define-mail-user-agent)
-        (define-mail-user-agent
-          'wl-user-agent
-          'wl-user-agent-compose
-          'wl-draft-send
-          'wl-draft-kill
-          'mail-send-hook))
+  (autoload 'wl-user-agent-compose "wl-draft" nil t)
+  (if (boundp 'mail-user-agent)
+      (setq mail-user-agent 'wl-user-agent))
+  (if (fboundp 'define-mail-user-agent)
+      (define-mail-user-agent
+        'wl-user-agent
+        'wl-user-agent-compose
+        'wl-draft-send
+        'wl-draft-kill
+        'mail-send-hook))
 
-    (setq
-      wl-forward-subject-prefix "Fwd: " )    ;; use "Fwd: " not "Forward: "
+  (setq
+   wl-forward-subject-prefix "Fwd: " )    ;; use "Fwd: " not "Forward: "
 
-    ;; hide many fields from message buffers
-    (setq wl-message-ignored-field-list '("^.*:")
-          wl-message-visible-field-list
-          '("^\\(To\\|Cc\\):"
-            "^Subject:"
-            "^\\(From\\|Reply-To\\):"
-            "^Organization:"
-            "^Message-Id:"
-            "^\\(Posted\\|Date\\):"
-            )
-          wl-message-sort-field-list
-          '("^From"
-            "^Organization:"
-            "^X-Attribution:"
-            "^Subject"
-            "^Date"
-            "^To"
-            "^Cc"))
+  ;; hide many fields from message buffers
+  (setq wl-message-ignored-field-list '("^.*:")
+        wl-message-visible-field-list
+        '("^\\(To\\|Cc\\):"
+          "^Subject:"
+          "^\\(From\\|Reply-To\\):"
+          "^Organization:"
+          "^Message-Id:"
+          "^\\(Posted\\|Date\\):"
+          )
+        wl-message-sort-field-list
+        '("^From"
+          "^Organization:"
+          "^X-Attribution:"
+          "^Subject"
+          "^Date"
+          "^To"
+          "^Cc"))
 
   ;; from a WL-mailinglist post by David Bremner
 
   ;; Invert behaviour of with and without argument replies.
   ;; just the author
   (setq wl-draft-reply-without-argument-list
-    '(("Reply-To" ("Reply-To") nil nil)
-       ("Mail-Reply-To" ("Mail-Reply-To") nil nil)
-       ("From" ("From") nil nil)))
+        '(("Reply-To" ("Reply-To") nil nil)
+          ("Mail-Reply-To" ("Mail-Reply-To") nil nil)
+          ("From" ("From") nil nil)))
 
 
   ;; bombard the world
   (setq wl-draft-reply-with-argument-list
-    '(("Followup-To" nil nil ("Followup-To"))
-       ("Mail-Followup-To" ("Mail-Followup-To") nil ("Newsgroups"))
-       ("Reply-To" ("Reply-To") ("To" "Cc" "From") ("Newsgroups"))
-       ("From" ("From") ("To" "Cc") ("Newsgroups"))))
+        '(("Followup-To" nil nil ("Followup-To"))
+          ("Mail-Followup-To" ("Mail-Followup-To") nil ("Newsgroups"))
+          ("Reply-To" ("Reply-To") ("To" "Cc" "From") ("Newsgroups"))
+          ("From" ("From") ("To" "Cc") ("Newsgroups"))))
 
   ;; Use emacs state mode in wl
   ;; (add-to-list 'evil-emacs-state-modes 'wl
@@ -1518,6 +1518,39 @@ configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old 
 
   ;; Hide mime buttons by default
   (setq mime-view-buttons-visible nil)
+
+  ;; Sort threads by reply date
+  ;; Add below to ~/.wl and 'reply-date will be a candidate for wl-summary-sort
+  (defun wl-summary-overview-entity-compare-by-reply-date (a b)
+    "Compare entity X and Y by latest date of replies."
+    (cl-flet ((string-max2
+               (x y)
+               (cond ((string< x y) y)
+                     ('t x)))
+              (elmo-entity-to-number
+               (x)
+               (elt (cdr x) 0))
+              (thread-number-get-date
+               (x)
+               (timezone-make-date-sortable (elmo-msgdb-overview-entity-get-date (elmo-message-entity wl-summary-buffer-elmo-folder x))))
+              (thread-get-family
+               (x)
+               (cons x (wl-thread-entity-get-descendant (wl-thread-get-entity x))))
+              (max-reply-date
+               (x)
+               (cond ((eq 'nil x)
+                      'nil)
+                     ((eq 'nil (cdr x))
+                      (thread-number-get-date (car x)))
+                     ('t
+                      (string-max2 (thread-number-get-date (car x))
+                                   (max-reply-date (cdr x)))))))
+      (string<
+       (max-reply-date (thread-get-family (elmo-entity-to-number a)))
+       (max-reply-date (thread-get-family (elmo-entity-to-number b))))))
+  (add-to-list 'wl-summary-sort-specs 'reply-date)
+  (setq wl-summary-default-sort-spec 'reply-date)
+
 #+END_SRC
 
 ** Semantic mode
@@ -1638,7 +1671,7 @@ Load the custom cuda-mode for cuda files
 Setup company mode for C-mode languages.
 #+BEGIN_SRC emacs-lisp
   (add-hook 'c++-mode-hook 'irony-mode)
-  (add-hook 'cuda-mode-hook 'irony-mode)
+  ;; (add-hook 'cuda-mode-hook 'irony-mode)
   (add-hook 'c-mode-hook 'irony-mode)
   (add-hook 'objc-mode-hook 'irony-mode)
 
