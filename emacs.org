@@ -386,8 +386,8 @@ mandatory and set to Consolas by default.
   ;; (add-to-list 'default-frame-alist '(font . "Dejavu Sans Mono-9"))
   ;; (defvar my-font-family "Dejavu Sans Mono")
   (defvar my-font-size 90)
-  ;; (defvar my-theme 'solarized-dark)
-  (defvar my-theme 'lush)
+  (defvar my-theme 'solarized-dark)
+  ;; (defvar my-theme 'lush)
   ;; )
 #+END_SRC
 
@@ -1244,6 +1244,9 @@ actually a minimal setting with integration with helm.
       ;; (define-key projectile-mode-map (kbd "C-c p f") 'helm-projectile)
       ;; (define-key projectile-mode-map (kbd "C-c p w") 'projectile-persp-switch-project)
       (setq projectile-enable-caching t)
+      (add-to-list 'projectile-other-file-alist '("C" "h" "hpp"))
+      (add-to-list 'projectile-other-file-alist '("cu" "h" "cuh"))
+      (add-to-list 'projectile-other-file-alist '("cuh" "cu"))
       ))
 #+END_SRC
 
@@ -1649,20 +1652,22 @@ Load the custom cuda-mode for cuda files
 
 Setup company mode for C-mode languages.
 #+BEGIN_SRC emacs-lisp
-  (add-hook 'c++-mode-hook 'irony-mode)
-  (add-hook 'cuda-mode-hook 'irony-mode)
-  (add-hook 'c-mode-hook 'irony-mode)
-  (add-hook 'objc-mode-hook 'irony-mode)
+    (add-hook 'c++-mode-hook 'irony-mode)
+    (add-hook 'cuda-mode-hook 'irony-mode)
+    (add-hook 'c-mode-hook 'irony-mode)
+    (add-hook 'objc-mode-hook 'irony-mode)
 
-  ;; replace the `completion-at-point' and `complete-symbol' bindings in
-  ;; irony-mode's buffers by irony-mode's function
-  (defun my-irony-mode-hook ()
-    (define-key irony-mode-map [remap completion-at-point]
-      'irony-completion-at-point-async)
-    (define-key irony-mode-map [remap complete-symbol]
-      'irony-completion-at-point-async))
-  (add-hook 'irony-mode-hook 'my-irony-mode-hook)
-  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
+    ;; replace the `completion-at-point' and `complete-symbol' bindings in
+    ;; irony-mode's buffers by irony-mode's function
+    (defun my-irony-mode-hook ()
+      (define-key irony-mode-map [remap completion-at-point]
+        'irony-completion-at-point-async)
+      (define-key irony-mode-map [remap complete-symbol]
+        'irony-completion-at-point-async)
+      (setq company-backends (remove 'company-clang company-backends))
+      (add-to-list 'company-backends 'company-irony))
+    (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+    (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 #+END_SRC
 
 Here are some further config for =cpputils-cmake=
