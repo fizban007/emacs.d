@@ -37,7 +37,31 @@
    (quote
     ("6a37be365d1d95fad2f4d185e51928c789ef7a4ccf17e7ca13ad63a8bf5b922f" default)))
  '(magit-diff-use-overlays nil)
+ '(magit-use-overlays nil)
  '(org-export-backends (quote (ascii html icalendar latex md)))
+ '(projectile-mode-line (quote (:eval (format " P[%s]" (projectile-project-name)))))
+ '(projectile-other-file-alist
+   (quote
+    (("cuh" "cu")
+     ("cu" "h" "cuh")
+     ("C" "h" "hpp")
+     ("cpp" "h" "hpp" "ipp")
+     ("ipp" "h" "hpp" "cpp")
+     ("hpp" "h" "ipp" "cpp")
+     ("cxx" "hxx" "ixx")
+     ("ixx" "cxx" "hxx")
+     ("hxx" "ixx" "cxx")
+     ("c" "h")
+     ("m" "h")
+     ("mm" "h")
+     ("h" "c" "cpp" "ipp" "hpp" "m" "mm" "cu" "C")
+     ("cc" "hh")
+     ("hh" "cc")
+     ("vert" "frag")
+     ("frag" "vert")
+     (nil "lock" "gpg")
+     ("lock" "")
+     ("gpg" ""))))
  '(safe-local-variable-values
    (quote
     ((ac-clang-flags "-std=c++11" "-I/usr/lib/clang/3.5.0/include/" "-I/usr/include/" "-I/usr/include/c++/4.9.2/" "-I/usr/include/c++/4.9.2/x86_64-unknown-linux-gnu/" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
@@ -52,4 +76,6 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(tabbar-separator ((t (:inherit tabbar-default)))))
+ '(tabbar-button-highlight ((t (:inherit tabbar-default))))
+ '(tabbar-separator ((t (:inherit tabbar-default))))
+ '(tabbar-unselected ((t (:inherit tabbar-default)))))

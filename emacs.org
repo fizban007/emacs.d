@@ -131,9 +131,6 @@ beginners starting with Emacs find it a monster to use).
   (setq case-fold-search t)
 #+END_SRC
 
-#+RESULTS:
-: t
-
 =ibuffer= is a built-in command in Emacs since Emacs 22. It is a
 drastically improved buffer list such that there is no reason to use
 the old one anymore. However, somehow the default is still the ugly
@@ -180,6 +177,11 @@ shebang, and if yes, makes it executable.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'after-save-hook
   'executable-make-buffer-file-executable-if-script-p)
+#+END_SRC
+
+The variable redisplay-dont-pause, when set to t, will cause Emacs to fully redraw the display before it processes queued input events. This may have slight performance implications if you’re aggressively mouse scrolling a document or rely on your keyboard’s auto repeat feature. For most of us, myself included, it’s probably a no-brainer to switch it on.
+#+BEGIN_SRC emacs-lisp
+(setq redisplay-dont-pause t)
 #+END_SRC
 
 * Package Repositories
@@ -295,6 +297,7 @@ global variable, =defvar= is the correct command to use instead of
       smex
       solarized-theme
       tabbar
+      tabbar-ruler
       undo-tree
       use-package
       wanderlust
@@ -391,6 +394,25 @@ mandatory and set to Consolas by default.
   ;; )
 #+END_SRC
 
+** Tabbar-ruler
+#+BEGIN_SRC emacs-lisp
+  (setq tabbar-ruler-global-tabbar t) ; If you want tabbar
+  ;; (setq tabbar-ruler-global-ruler t) ; if you want a global ruler
+  ;; (setq tabbar-ruler-popup-menu t) ; If you want a popup menu.
+  ;; (setq tabbar-ruler-popup-toolbar t) ; If you want a popup toolbar
+  ;; (setq tabbar-ruler-popup-scrollbar t) ; If you want to only show the
+  ;;                                       ; scroll bar when your mouse is moving.
+  (use-package tabbar-ruler
+    :config
+    (progn
+      (tabbar-ruler-group-by-projectile-project)
+      (global-set-key [\M-left] 'tabbar-ruler-tabbar-forward-tab)
+      (global-set-key [\M-right] 'tabbar-ruler-tabbar-backward-tab)
+      (setq tabbar-ruler-movement-timer-delay 1000000)
+      (tabbar-install-faces)
+    ))
+#+END_SRC
+
 ** Theme
 The best theme I have found up to now is Solarized. It comes in both
 dark and light variants and while I prefer the dark version for most
@@ -458,11 +480,12 @@ efficient way. However, when just browsing it still very useful to
 easily keep track of what files are open without using =C-x b= every
 time. The =tabbar= package solves this problem and is the best I've found.
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package tabbar
     :init
     (progn
       (tabbar-mode)
+      ;; (tabbar-ruler-up)
       
       ;; Tabbar bindings
       (global-set-key [\M-left] 'tabbar-backward-tab)
@@ -471,23 +494,23 @@ time. The =tabbar= package solves this problem and is the best I've found.
       (global-set-key [\M-down] 'tabbar-forward-group)
 
       ;; Set tabbar faces
-      (set-face-attribute
-       'tabbar-selected nil
-       :height 1.0
-       :box nil
-       :family my-font-family
-       :height my-font-size)
+      ;; (set-face-attribute
+      ;;  'tabbar-selected nil
+      ;;  :height 1.0
+      ;;  :box nil
+      ;;  :family my-font-family
+      ;;  :height my-font-size)
 
-      (set-face-attribute
-       'tabbar-default nil
-       :height 1.0
-       :family my-font-family
-       :height my-font-size)
+      ;; (set-face-attribute
+      ;;  'tabbar-default nil
+      ;;  :height 1.0
+      ;;  :family my-font-family
+      ;;  :height my-font-size)
 
-      (set-face-attribute
-       'tabbar-button nil
-       :box nil)
-
+      ;; (set-face-attribute
+      ;;  'tabbar-button nil
+      ;;  :box nil)
+      ;; (setq tabbar-background-color "#959A79")
       ;; Set separator size
       ;; (setq tabbar-separator (quote (0.5)))
       ))
@@ -1045,10 +1068,12 @@ windows open and one wants to jump between them quickly, but its
 efficiency is not so big when there are only 3 windows and one only
 needs to be jumping between 2 of them. Maybe need further tinkering...
 #+BEGIN_SRC emacs-lisp
-  (use-package ace-window
-    :init
-    (global-set-key (kbd "M-s") 'ace-window) ; cursor to a given window
-  )
+    (use-package ace-window
+      :init
+      (global-set-key (kbd "M-s") 'ace-window) ; cursor to a given window
+      :config
+      (setq aw-scope 'frame)
+    )
 #+END_SRC
 
 ** Company-mode
@@ -1244,9 +1269,9 @@ actually a minimal setting with integration with helm.
       ;; (define-key projectile-mode-map (kbd "C-c p f") 'helm-projectile)
       ;; (define-key projectile-mode-map (kbd "C-c p w") 'projectile-persp-switch-project)
       (setq projectile-enable-caching t)
-      (add-to-list 'projectile-other-file-alist '("C" "h" "hpp"))
-      (add-to-list 'projectile-other-file-alist '("cu" "h" "cuh"))
-      (add-to-list 'projectile-other-file-alist '("cuh" "cu"))
+      ;; (add-to-list 'projectile-other-file-alist '("C" "h" "hpp"))
+      ;; (add-to-list 'projectile-other-file-alist '("cu" "h" "cuh"))
+      ;; (add-to-list 'projectile-other-file-alist '("cuh" "cu"))
       ))
 #+END_SRC
 
@@ -1508,18 +1533,18 @@ configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old 
 
   ;; Invert behaviour of with and without argument replies.
   ;; just the author
-  (setq wl-draft-reply-without-argument-list
-        '(("Reply-To" ("Reply-To") nil nil)
-          ("Mail-Reply-To" ("Mail-Reply-To") nil nil)
-          ("From" ("From") nil nil)))
+  ;; (setq wl-draft-reply-without-argument-list
+  ;;       '(("Reply-To" ("Reply-To") nil nil)
+  ;;         ("Mail-Reply-To" ("Mail-Reply-To") nil nil)
+  ;;         ("From" ("From") nil nil)))
 
 
   ;; bombard the world
-  (setq wl-draft-reply-with-argument-list
-        '(("Followup-To" nil nil ("Followup-To"))
-          ("Mail-Followup-To" ("Mail-Followup-To") nil ("Newsgroups"))
-          ("Reply-To" ("Reply-To") ("To" "Cc" "From") ("Newsgroups"))
-          ("From" ("From") ("To" "Cc") ("Newsgroups"))))
+  ;; (setq wl-draft-reply-with-argument-list
+  ;;       '(("Followup-To" nil nil ("Followup-To"))
+  ;;         ("Mail-Followup-To" ("Mail-Followup-To") nil ("Newsgroups"))
+  ;;         ("Reply-To" ("Reply-To") ("To" "Cc" "From") ("Newsgroups"))
+  ;;         ("From" ("From") ("To" "Cc") ("Newsgroups"))))
 
   ;; Use emacs state mode in wl
   ;; (add-to-list 'evil-emacs-state-modes 'wl
@@ -1536,35 +1561,35 @@ configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old 
 
   ;; Sort threads by reply date
   ;; Add below to ~/.wl and 'reply-date will be a candidate for wl-summary-sort
-  (defun wl-summary-overview-entity-compare-by-reply-date (a b)
-    "Compare entity X and Y by latest date of replies."
-    (cl-flet ((string-max2
-               (x y)
-               (cond ((string< x y) y)
-                     ('t x)))
-              (elmo-entity-to-number
-               (x)
-               (elt (cdr x) 0))
-              (thread-number-get-date
-               (x)
-               (timezone-make-date-sortable (elmo-msgdb-overview-entity-get-date (elmo-message-entity wl-summary-buffer-elmo-folder x))))
-              (thread-get-family
-               (x)
-               (cons x (wl-thread-entity-get-descendant (wl-thread-get-entity x))))
-              (max-reply-date
-               (x)
-               (cond ((eq 'nil x)
-                      'nil)
-                     ((eq 'nil (cdr x))
-                      (thread-number-get-date (car x)))
-                     ('t
-                      (string-max2 (thread-number-get-date (car x))
-                                   (max-reply-date (cdr x)))))))
-      (string<
-       (max-reply-date (thread-get-family (elmo-entity-to-number a)))
-       (max-reply-date (thread-get-family (elmo-entity-to-number b))))))
-  (add-to-list 'wl-summary-sort-specs 'reply-date)
-  (setq wl-summary-default-sort-spec 'reply-date)
+  ;; (defun wl-summary-overview-entity-compare-by-reply-date (a b)
+  ;;   "Compare entity X and Y by latest date of replies."
+  ;;   (cl-flet ((string-max2
+  ;;              (x y)
+  ;;              (cond ((string< x y) y)
+  ;;                    ('t x)))
+  ;;             (elmo-entity-to-number
+  ;;              (x)
+  ;;              (elt (cdr x) 0))
+  ;;             (thread-number-get-date
+  ;;              (x)
+  ;;              (timezone-make-date-sortable (elmo-msgdb-overview-entity-get-date (elmo-message-entity wl-summary-buffer-elmo-folder x))))
+  ;;             (thread-get-family
+  ;;              (x)
+  ;;              (cons x (wl-thread-entity-get-descendant (wl-thread-get-entity x))))
+  ;;             (max-reply-date
+  ;;              (x)
+  ;;              (cond ((eq 'nil x)
+  ;;                     'nil)
+  ;;                    ((eq 'nil (cdr x))
+  ;;                     (thread-number-get-date (car x)))
+  ;;                    ('t
+  ;;                     (string-max2 (thread-number-get-date (car x))
+  ;;                                  (max-reply-date (cdr x)))))))
+  ;;     (string<
+  ;;      (max-reply-date (thread-get-family (elmo-entity-to-number a)))
+  ;;      (max-reply-date (thread-get-family (elmo-entity-to-number b))))))
+  ;; (add-to-list 'wl-summary-sort-specs 'reply-date)
+  ;; (setq wl-summary-default-sort-spec 'reply-date)
 
 #+END_SRC
 
