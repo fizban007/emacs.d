@@ -368,7 +368,7 @@ This section loads themes and alters the looks of Emacs. To be honest,
 vanilla Emacs looks like crap while it could have looked so much
 better with just a few packages loaded. 
 
-** Font
+** Definitions
 The default font I found to be best looking is Consolas. Others don't
 even come close. It might be tricky to get a proper version of it
 though, since it is propietary. This block tries to find Consolas in
@@ -380,18 +380,37 @@ Edit: This method has problems with =emacs --daemon= since if Emacs is
 started in daemon mode then it will not see the font. Now the font is
 mandatory and set to Consolas by default.
 
+Edit: Want to take Menlo font for a spin. Although Menlo is a
+propietary font, it can be found somewhere on the internet, and it
+turns out to be really good. The letters are full and clear, and the
+spacing are just right too.
+
 #+BEGIN_SRC emacs-lisp
-  ;; (when (member "Consolas" (font-family-list))
-  (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
-  (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
-  (defvar my-font-family "Consolas for Powerline")
+  ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
+  ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
+  (add-to-list 'initial-frame-alist '(font . "Monaco-9"))
+  (add-to-list 'default-frame-alist '(font . "Monaco-9"))
+  ;; (defvar my-font-family "Consolas for Powerline")
+  (defvar my-font-family "Monaco")
   ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
   ;; (add-to-list 'default-frame-alist '(font . "Dejavu Sans Mono-9"))
   ;; (defvar my-font-family "Dejavu Sans Mono")
   (defvar my-font-size 90)
   (defvar my-theme 'solarized-dark)
   ;; (defvar my-theme 'lush)
-  ;; )
+
+  (defun my-load-theme (&optional frame)
+    (load-theme my-theme t)
+    ;; Remove modeline under and over lines
+    (set-face-attribute
+     'mode-line nil
+     :underline nil
+     :overline nil)
+    (set-face-attribute
+     'mode-line-inactive nil
+     :underline nil
+     :overline nil)
+    )
 #+END_SRC
 
 ** Tabbar-ruler
@@ -406,8 +425,8 @@ mandatory and set to Consolas by default.
     :config
     (progn
       (tabbar-ruler-group-by-projectile-project)
-      (global-set-key [\M-left] 'tabbar-ruler-tabbar-forward-tab)
-      (global-set-key [\M-right] 'tabbar-ruler-tabbar-backward-tab)
+      (global-set-key [\M-right] 'tabbar-ruler-tabbar-forward-tab)
+      (global-set-key [\M-left] 'tabbar-ruler-tabbar-backward-tab)
       (setq tabbar-ruler-movement-timer-delay 1000000)
       (tabbar-install-faces)
     ))
@@ -421,18 +440,15 @@ conditions. The following code loads =solarized-dark= as the default
 theme.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (defun my-load-theme (&optional frame)
-  ;;   (load-theme 'solarized-dark t))
+    ;; (defun my-reload-theme (frame)
+    ;;   (select-frame frame)
+    ;;   (my-load-theme frame))
 
-  ;; (defun my-reload-theme (frame)
-  ;;   (select-frame frame)
-  ;;   (my-load-theme frame))
-
-  (if (daemonp)
-      (add-hook 'after-make-frame-functions
-                (lambda (frame)
-                  (load-theme my-theme t)))
-    (load-theme my-theme t))
+    (if (daemonp)
+        (add-hook 'after-make-frame-functions
+                  (lambda (frame)
+                    (my-load-theme)))
+      (my-load-theme))
 #+END_SRC
 
 Note that Solarized theme will require 24bit color support in
@@ -494,25 +510,32 @@ time. The =tabbar= package solves this problem and is the best I've found.
       (global-set-key [\M-down] 'tabbar-forward-group)
 
       ;; Set tabbar faces
-      ;; (set-face-attribute
-      ;;  'tabbar-selected nil
-      ;;  :height 1.0
-      ;;  :box nil
-      ;;  :family my-font-family
-      ;;  :height my-font-size)
-
-      ;; (set-face-attribute
-      ;;  'tabbar-default nil
-      ;;  :height 1.0
-      ;;  :family my-font-family
-      ;;  :height my-font-size)
-
-      ;; (set-face-attribute
-      ;;  'tabbar-button nil
-      ;;  :box nil)
-      ;; (setq tabbar-background-color "#959A79")
-      ;; Set separator size
-      ;; (setq tabbar-separator (quote (0.5)))
+      (defun tabbar-install-faces (&optional frame)
+        "Installs tabbar faces for a frame."
+        (interactive)
+        (copy-face 'mode-line 'tabbar-default frame)
+        (copy-face 'default 'tabbar-selected frame)
+        (copy-face 'shadow 'tabbar-unselected frame)
+        (set-face-attribute 'tabbar-unselected frame
+                            :background (face-attribute 'mode-line-inactive :background)
+                            :box (:line-width 2))
+        (set-face-attribute 'tabbar-selected frame
+                            :box (:line-width 2))
+        
+        (copy-face 'mode-line-buffer-id 'tabbar-selected-highlight frame)
+        (copy-face 'mode-line-inactive 'tabbar-unselected-highlight frame)
+        
+        (set-face-attribute 'tabbar-separator frame
+                            :inherit 'tabbar-default
+                            :box nil)
+        
+        (set-face-attribute 'tabbar-button frame
+                            :inherit 'tabbar-default
+                            :box nil))
+      
+      (add-hook 'after-make-frame-functions 'tabbar-install-faces)
+      (add-hook 'emacs-startup-hook 'tabbar-install-faces)
+      (tabbar-install-faces)
       ))
 #+END_SRC
 
@@ -1097,7 +1120,9 @@ is the config:
             (backward-char 1)
             (if (looking-at "\\.") t
               (backward-char 1)
-              (if (looking-at "->") t nil)))))
+              (if (looking-at "::") t
+                ;; (backward-char 1)
+                (if (looking-at "->") t nil))))))
 
       (defun do-yas-expand ()
         (let ((yas/fallback-behavior 'return-nil))
@@ -1533,18 +1558,18 @@ configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old 
 
   ;; Invert behaviour of with and without argument replies.
   ;; just the author
-  ;; (setq wl-draft-reply-without-argument-list
-  ;;       '(("Reply-To" ("Reply-To") nil nil)
-  ;;         ("Mail-Reply-To" ("Mail-Reply-To") nil nil)
-  ;;         ("From" ("From") nil nil)))
+  (setq wl-draft-reply-without-argument-list
+        '(("Reply-To" ("Reply-To") nil nil)
+          ("Mail-Reply-To" ("Mail-Reply-To") nil nil)
+          ("From" ("From") nil nil)))
 
 
   ;; bombard the world
-  ;; (setq wl-draft-reply-with-argument-list
-  ;;       '(("Followup-To" nil nil ("Followup-To"))
-  ;;         ("Mail-Followup-To" ("Mail-Followup-To") nil ("Newsgroups"))
-  ;;         ("Reply-To" ("Reply-To") ("To" "Cc" "From") ("Newsgroups"))
-  ;;         ("From" ("From") ("To" "Cc") ("Newsgroups"))))
+  (setq wl-draft-reply-with-argument-list
+        '(("Followup-To" nil nil ("Followup-To"))
+          ("Mail-Followup-To" ("Mail-Followup-To") nil ("Newsgroups"))
+          ("Reply-To" ("Reply-To") ("To" "Cc" "From") ("Newsgroups"))
+          ("From" ("From") ("To" "Cc") ("Newsgroups"))))
 
   ;; Use emacs state mode in wl
   ;; (add-to-list 'evil-emacs-state-modes 'wl
@@ -1590,7 +1615,7 @@ configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old 
   ;;      (max-reply-date (thread-get-family (elmo-entity-to-number b))))))
   ;; (add-to-list 'wl-summary-sort-specs 'reply-date)
   ;; (setq wl-summary-default-sort-spec 'reply-date)
-
+(setq mime-edit-split-message nil)
 #+END_SRC
 
 ** Semantic mode
@@ -1671,6 +1696,16 @@ Now add google c++ style checker
                flycheck-googlelint-filter "-whitespace,+whitespace/braces,-legal/copyright,-build/c++11"
                flycheck-googlelint-linelength "120")
          ))
+#+END_SRC
+
+** Smart Parens Mode
+Simply turns on smart parens mode globally.
+#+BEGIN_SRC emacs-lisp
+  (require 'smartparens-config)
+  (smartparens-global-mode t)
+
+  ;; Hightlight matching pairs
+  (show-smartparens-global-mode t)
 #+END_SRC
 
 * Language modes
