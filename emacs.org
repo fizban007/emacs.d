@@ -5,11 +5,12 @@
 #+OPTIONS: toc:2 num:nil ^:nil
 
 * Introduction
-This is a new effort to making a unified and portable Emacs init
+This is a new effort of making a unified and portable Emacs init
 configuration using org-mode. The idea is to have a simple =emacs.el=
-in =.emacs.d= directory, while tangling all the components from this
-single file. At the same time, this file will act as a documentation
-of whatever is going into the =emacs.el= init file.
+in =.emacs.d= directory, which is the result of tangling all the
+components from this self-documenting org file. At the same time, this
+file will act as a documentation of whatever is going into the
+=emacs.el= init file.
 
 The way to use this file with a vanilla emacs installation is to put
 this file in =~/.emacs.d=, open it in emacs, and tangle it using =C-c C-v
@@ -39,7 +40,7 @@ The comparison of lexical vs dynamic binding is summarized pretty well
 in [[http://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][this article]] on Emacs wiki. In general dynamic binding is dispised
 by most programmers, and people quote this as one of the weaknesses of
 Emacs-lisp. Therefore it is desirable to have this line at the
-beginning of our init.el
+beginning of our =init.el=.
 
 ** Personal Settings
 First things first. These settings are basically "who-i-am" and
@@ -100,20 +101,20 @@ beginners starting with Emacs find it a monster to use).
       (unless (file-writable-p file)
         (setq file (concat "/sudo:root@localhost:" file)))
       (find-file file)))
-  ;; or some other keybinding...
+  ;; give it some keybinding...
   (global-set-key (kbd "C-x F") 'find-file-as-root)
 
   ;; Use C-x C-e to evaluate region
   (global-set-key (kbd "C-x C-e") 'eval-region)
 
-  ;; Pane manipulation
+  ;; Pane manipulation, taken from the advice on Xah's blog
   (global-set-key (kbd "M-1") 'delete-other-windows) ; expand current pane
   (global-set-key (kbd "M-5") 'split-window-vertically) ; split pane top/bottom
   (global-set-key (kbd "M-4") 'split-window-horizontally) ; split pane top/bottom
   (global-set-key (kbd "M-3") 'delete-window) ; close current pane
 
   ;; Garbage collection, prevent gc for a longer period of time
-  (setq gc-cons-threshold 20000000)
+  (setq gc-cons-threshold 10000000)
 
   ;; Auto revert buffers which are modified elsewhere
   (global-auto-revert-mode 1)
@@ -180,21 +181,28 @@ point reaches the beginning or end of the buffer, stop there."
 #+END_SRC
 
 This short block checks whether the file under edit contains a
-shebang, and if yes, makes it executable.
+shebang (e.g. =#!/bin/bash=), and if yes, makes it executable.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'after-save-hook
   'executable-make-buffer-file-executable-if-script-p)
 #+END_SRC
 
-The variable redisplay-dont-pause, when set to t, will cause Emacs to fully redraw the display before it processes queued input events. This may have slight performance implications if you’re aggressively mouse scrolling a document or rely on your keyboard’s auto repeat feature. For most of us, myself included, it’s probably a no-brainer to switch it on.
+The variable redisplay-dont-pause, when set to t, will cause Emacs to
+fully redraw the display before it processes queued input events. This
+may have slight performance implications if you’re aggressively mouse
+scrolling a document or rely on your keyboard’s auto repeat
+feature. For most of us, myself included, it’s probably a no-brainer
+to switch it on.
 #+BEGIN_SRC emacs-lisp
 (setq redisplay-dont-pause t)
 #+END_SRC
 
 * Package Repositories
-First we need to set up some package repositories to establish a
-consistent way to get packages. We use the official gnu repo, as well
-as the third-party melpa and marmalade repos. From [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][this source]], the
+Now we configure external packages for emacs. This is done using the
+excellent package management tool that comes with emacs itself. First
+we need to set up some package repositories to establish a consistent
+way to get packages. We use the official gnu repo, as well as the
+third-party melpa and marmalade repos. From [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][this source]], the
 difference between these two repos and the official repo is that:
 
 + melpa is a package archive managed by Milkypostman. It's the easiest
@@ -229,8 +237,8 @@ Package management is done through the official =package.el=.
 
 After =(package-initialize)= all the directories under
 =~/.emacs.d/elpa= will be added to the load-path, and therefore the
-packages accessible from Emacs. Most of the other packages will no
-longer need to set their load-path anymore.
+packages become accessible from Emacs. Most of the other packages will
+no longer need to set their load-path anymore.
 
 ** List of essential packages
 Here we define a list of essential packages that we can't live
@@ -288,6 +296,7 @@ global variable, =defvar= is the correct command to use instead of
       magit
       markdown-mode
       neotree
+      nlinum
       org
       org-jekyll
       ox-reveal
@@ -312,7 +321,8 @@ global variable, =defvar= is the correct command to use instead of
       wgrep
       wgrep-ag
       yasnippet
-      zotelo) "List of packages to ensure installed at launch")
+      zotelo)
+ "List of packages to ensure installed at launch")
 #+END_SRC
 
 This is a really long list for "essential" packages. However it is
@@ -355,8 +365,8 @@ the predicate returns nil, in which case it will first refresh the
 package contents, and then install any package which does not satisfy
 =package-installed-p=.
 
-The rest of this document is dedicated to loading and configuration of
-these packages.
+The rest of this document (at least most of it) is dedicated to
+loading and configuration of these packages.
 
 ** Use-package macro
 =use-package= is a package to simplify loading packages. Instead of
@@ -392,6 +402,10 @@ propietary font, it can be found somewhere on the internet, and it
 turns out to be really good. The letters are full and clear, and the
 spacing are just right too.
 
+Edit: Now my preferred font is Monaco, which by the way is also a
+propietary font. If it is not in your system then maybe the default
+monospace font will be used.
+
 #+BEGIN_SRC emacs-lisp
   ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
   ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
@@ -421,6 +435,8 @@ spacing are just right too.
 #+END_SRC
 
 ** Tabbar-ruler
+I never use the ruler component of tabbar-ruler. I just find its
+tabbar theme to be very good. 
 #+BEGIN_SRC emacs-lisp
   (setq tabbar-ruler-global-tabbar t) ; If you want tabbar
   ;; (setq tabbar-ruler-global-ruler t) ; if you want a global ruler
@@ -434,6 +450,7 @@ spacing are just right too.
       (tabbar-ruler-group-by-projectile-project)
       (global-set-key [\M-right] 'tabbar-ruler-tabbar-forward-tab)
       (global-set-key [\M-left] 'tabbar-ruler-tabbar-backward-tab)
+      ;; This is to prevent tabbar-ruler eating a lot of cpu resources
       (setq tabbar-ruler-movement-timer-delay 1000000)
       (tabbar-install-faces)
     ))
@@ -460,33 +477,42 @@ theme.
 
 Note that Solarized theme will require 24bit color support in
 terminal, otherwise it is very difficult to get the same look-and-feel
-even when the terminal is set to Solarized theme. In Emacs 24.4 there
-seems to be built-in 24bit color support in terminals, but in prior
-versions one might need to apply a patch. Note also that the terminal
-application needs to support 24bit color. I'm using konsole right now
-and it works great with terminal mode emacs.
+even when the terminal is set to Solarized theme. Even in emacs 24.4
+the patch for 24bit color support is not merged into trunk, so one
+either needs to compile emacs with the patch, or just switch to
+another theme when using emacs in terminal.
+
+The only use case I need for emacs to run in terminal is to remotely
+edit a file. But now I start to use tramp a lot more often so that I
+can use the local emacs installation to edit it, circumventing the
+need to invoke emacs in terminal.
 
 ** Smart mode line
 The mode line is a very important part of Emacs, while often being the
 most ugly part with some unexplicable symbols. The =smart-mode-line=
 package revamps the mode line and makes it actually useful and more
-pleasing to look at. Here is the config (note that this is our first
-package config which uses =use-package=!)
+pleasing to look at. Here is the config:
 
 #+BEGIN_SRC emacs-lisp
   (use-package smart-mode-line
     :init
     (progn 
+      ;; One could also set the theme to respectful to unify it with
+      ;; Solarized theme, but I find dark to be better-looking
       (setq sml/theme 'dark)
+      ;; (setq sml/theme 'respectful)
       (setq sml/mode-width 'right)
       (setq sml/shorten-modes t)
-      ;; (setq sml/theme 'respectful)
       (setq sml/no-confirm-load-theme t)
       (if after-init-time (sml/setup)
         (add-hook 'after-init-hook 'sml/setup))))
 #+END_SRC
 
 ** Powerline
+This package gives the modeline a powerline look. However I don't like
+the default colors and configuration, and don't feel like going into
+details in configuration. Why can't the author ship with a better
+default theme!?
 #+BEGIN_SRC emacs-lisp :tangle no
   ;; (use-package powerline)
   (require 'powerline)
@@ -501,7 +527,12 @@ session. Now a tab bar is usually not sufficient to show all open
 buffers and relying on the bar to find buffers is usually not the most
 efficient way. However, when just browsing it still very useful to
 easily keep track of what files are open without using =C-x b= every
-time. The =tabbar= package solves this problem and is the best I've found.
+time. The =tabbar= package solves this problem and is the best I've
+found.
+
+Edit: Since we now use =tabbar-ruler= for the tab bar, this code block
+is disabled. However =tabbar= is still installed as a dependency of
+=tabbar-ruler=.
 
 #+BEGIN_SRC emacs-lisp :tangle no
   (use-package tabbar
@@ -552,16 +583,16 @@ needed for tabbar. The config is [[tabbar-evil][here]].
 ** Line Numbers
 The following block shows line numbers to the left of the buffer. It
 is usually a good thing to have line numbers available to refer
-to. I'm still not sure if =nlinum= or =linum= is better at displaying
-the line numbers more efficiently. Here we use =linum=.
+to. =nlinum= is vastly superior in performance to the bundled =linum=
+mode, especially in long org-mode buffers, therefore we use it here:
 
 #+BEGIN_SRC emacs-lisp
-  (use-package linum
+  (use-package nlinum
     :init
     (progn
       ;;(nlinum-mode 1)
       ;; (line-number-mode 1)
-      (global-linum-mode 1)
+      (global-nlinum-mode 1)
       ;;       (use-package linum-relative
       ;;         :ensure linum-relative)
       ))
@@ -582,13 +613,17 @@ especially with cmake generated makefiles.
 #+END_SRC
 
 ** Other settings
-Here are uncategorized visual settings, most of them trivial.
+Here are uncategorized visual settings, most of them trivial. The
+reason they are not in the "General Settings" section is because they
+mostly deal with visuals.
 
 #+BEGIN_SRC emacs-lisp
   ;; Hide the scroll bar
   (scroll-bar-mode -1)
 
-  ;; Use C-c s to toggle visibility of scroll bar
+  ;; Use C-c s to toggle visibility of scroll bar. The scroll bar is
+  ;; actually useful sometimes to get an analog feedback of where you
+  ;; are in the buffer
   (global-set-key (kbd "C-c s") 'scroll-bar-mode)
 
   ;; Hide the menu bar
@@ -600,7 +635,8 @@ Here are uncategorized visual settings, most of them trivial.
   ;; Display time in mode line
   (display-time)
 
-  ;; Show matching brackets
+  ;; Show matching brackets. When smart-parens-mode is turned on, this
+  ;; will be disabled.
   (show-paren-mode 1)
 
   ;; Highlighting TODO, FIXME and BUG in programming modes
@@ -637,6 +673,7 @@ forgotten the source.
   (setq org-directory "~/.org/")
   ;; fontify code in code blocks
   (setq org-src-fontify-natively t)
+  ;; Agenda settings
   (setq org-agenda-ndays 7)
   (setq org-agenda-repeating-timestamp-show-all nil)
   (setq org-agenda-restore-windows-after-quit t)
@@ -662,11 +699,13 @@ forgotten the source.
   (setq org-use-tag-inheritance nil)
   (setq org-confirm-babel-evaluate nil)
 
-  (setq org-todo-keyword-faces
-        '(("URGENT" . "red") ("TODO" . org-warning) ("STARTED" . "orange") ("APPT" . "lightblue") ("WAITING" . "lightgreen")))
-
+  ;; Add new todo keywords for all org-mode buffers
   (setq org-todo-keywords
         '((sequence "TODO(t)" "URGENT(u)" "STARTED(s)" "WAITING(w)" "MAYBE(m)" "|" "DONE(d)" "CANCELED(c)" "DEFERRED(d)")))
+
+  ;; Add new todo keyward faces
+  (setq org-todo-keyword-faces
+        '(("URGENT" . "red") ("TODO" . org-warning) ("STARTED" . "orange") ("APPT" . "lightblue") ("WAITING" . "lightgreen")))
 
   (defun org-summary-todo (n-done n-not-done)
      "Switch entry to DONE when all subentries are done, to TODO otherwise."
@@ -717,6 +756,9 @@ when embedding latex directly into org-mode.
       ;;         "pdflatex -interaction nonstopmode %f")) ;; for multiple passes
 
       ;; Latex preview setting
+
+      ;; the imagemagick background gives me better foreground colors
+      ;; than the other background
       (setq org-latex-create-formula-image-program 'imagemagick)
       (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.4))
       (setq org-latex-listings t)))
@@ -754,10 +796,11 @@ block for ox-publish:
 
 ** Markdown Export
 I'd like to add export to markdown mode for ease of writing a
-README.md for github. Here is how
+=README.md= for GitHub. Here is how
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-export-backends 'md)
 #+END_SRC
+This gives a new export option when pressing =C-e=.
 
 ** External agenda update
 This function was taken from other blogs which solves the problem of
@@ -799,7 +842,8 @@ date. Here are some of the templates I've accumulated over the years:
 #+END_SRC
 
 ** Misc Settings
-Here are some further settings for org-mode, including key bindings, etc.
+Here are some further settings for org-mode, including key bindings,
+etc. These are mostly copied from elsewhere too.
 #+BEGIN_SRC emacs-lisp
     (add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\)$" . org-mode))
     (global-set-key "\C-cl" 'org-store-link)
@@ -830,18 +874,23 @@ Here are some further settings for org-mode, including key bindings, etc.
                                ))
 #+END_SRC
 
+The final word about org-mode is that company-mode will sometimes make
+text editing a lot less responsive. When writing a lot of text in
+org-mode, it is better to disable company, since you don't want to use
+it to complete English words anyway (most of the time).
+
 * Evil mode
 The =evil-mode= in Emacs is a package that simulates Vim behavior. It
 is the best of its kind in that it almost fully simulates all of Vim's
 behavior by adding a modal layer on top of Emacs's editing
 facilities. It is purely because of this package that I successfully
 made the transition from Vim to Emacs, and I suppose it is the same
-story for many others as well. In fact, this has been proposed as the
+story for many others as well. In fact, this has been proposed as The
 solution to the old Emacs problem: "Emacs is a pretty good operating
 system, but it could use a better text editor".
 
 Therefore we dedicate a whole section in our config file to this
-particular mode/package. Also since I use Colemak keyboard config,
+particular mode/package. Also since I use [[http://colemak.com][Colemak]] keyboard config,
 there are quite a few things to tweak from the default configuration
 to satisfy my needs.
 
@@ -853,6 +902,8 @@ to satisfy my needs.
     :config
     (progn 
       (add-hook 'prog-mode-hook 'hs-minor-mode)
+
+      ;; This is supposed to be a great thing, but I seldom use it!
       (use-package evil-surround
         :init
         (progn 
@@ -944,8 +995,17 @@ to satisfy my needs.
           (global-set-key (kbd "M-;") 'comment-dwim) 
           (define-key evil-normal-state-map ",c " 'evilnc-comment-or-uncomment-lines)
           (define-key evil-visual-state-map ",c " 'evilnc-comment-or-uncomment-lines)
-          (define-key evil-normal-state-map ",cc" 'evilnc-copy-and-comment-lines)))
+          (define-key evil-normal-state-map ",cc" 'evilnc-copy-and-comment-lines)
+          (define-key evil-visual-state-map ",cc" 'evilnc-copy-and-comment-lines)
+          ))
       ;;   (define-key evil-normal-state-map ",cl" 'evilnc-comment-or-uncomment-to-the-line)
+      ;; Evil nerd commenter key bindings
+      ;; (global-set-key (kbd "M-;") 'evilnc-comment-or-uncomment-lines)
+      ;; (global-set-key (kbd "M-:") 'evilnc-comment-or-uncomment-to-the-line)
+      ;; (global-set-key (kbd "C-c c") 'evilnc-copy-and-comment-lines)
+      ;; (global-set-key (kbd "C-c p") nil)
+      ;;   (define-key evil-normal-state-map ",cp" 'evilnc-comment-or-uncomment-paragraphs)
+      ;;   (define-key evil-normal-state-map ",cr" 'comment-or-uncomment-region))
 
       (evil-declare-key 'normal org-mode-map
         "za" 'org-cycle
@@ -993,17 +1053,6 @@ to satisfy my needs.
       ))
   ;; (evilnc-default-hotkeys)
 
-  ;; that's the export function
-  ;; Evil nerd commenter key bindings
-  ;; (global-set-key (kbd "M-;") 'evilnc-comment-or-uncomment-lines)
-  ;; (global-set-key (kbd "M-:") 'evilnc-comment-or-uncomment-to-the-line)
-  ;; (global-set-key (kbd "C-c c") 'evilnc-copy-and-comment-lines)
-  ;; (global-set-key (kbd "C-c p") nil)
-  ;;   (define-key evil-normal-state-map ",cp" 'evilnc-comment-or-uncomment-paragraphs)
-  ;;   (define-key evil-normal-state-map ",cr" 'comment-or-uncomment-region))
-  ;; org mode
-
-
 #+END_SRC
 
 * Package Settings
@@ -1017,7 +1066,6 @@ would be a headache to keep track of all the inter-dependencies.
 Paradox is a package manager which is better than the built-in
 one. This is simply a one-line config which enables access to github with tokens
 #+BEGIN_SRC emacs-lisp
-  (setq paradox-github-token "99f28325b00944af3822a25547380279334b91a4")
   (setq paradox-automatically-star t)
   (setq paradox-execute-asynchronously t)
   (add-to-list 'evil-emacs-state-modes 'paradox-menu-mode)
@@ -1028,7 +1076,7 @@ Yasnippet is a snippet manager for Emacs. It works by expanding short
 specific keywords into predetermined structures which are called
 "snippets". For example, one can enter "src" in the =org-mode= buffer
 and press =TAB=, and yasnippet will expand "src" into the standard
-=org-mode= source block "#+BEGIN_SRC ... #+END_SRC". It is very handy
+=org-mode= source block =#+BEGIN_SRC= ... =#+END_SRC=. It is very handy
 when entering repetitive code blocks or structures, and minimizes
 mistakes in the process.
 
@@ -1055,6 +1103,7 @@ mistakes in the process.
         (yas-minor-mode-on))
 
       (defalias 'yas/current-snippet-table 'yas--get-snippet-tables)
+      ;; Only turn on yasnippet for these modes
       (add-hook 'org-mode-hook 'yas-my-initialize)
       (add-hook 'c-mode-common-hook 'yas-my-initialize)
       (add-hook 'python-mode-hook 'yas-my-initialize)
