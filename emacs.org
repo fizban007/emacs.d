@@ -12,10 +12,10 @@ single file. At the same time, this file will act as a documentation
 of whatever is going into the =emacs.el= init file.
 
 The way to use this file with a vanilla emacs installation is to put
-this file in ~/.emacs.d, open it in emacs, and tangle it using C-c C-v
-t. The result is a file named emacs.el in your ~/.emacs.d folder. Now
-you can simply symlink it to either ~/.emacs or
-~/.emacs.d/init.el. Your emacs will now load this configuration file
+this file in =~/.emacs.d=, open it in emacs, and tangle it using =C-c C-v
+t=. The result is a file named =emacs.el= in your =~/.emacs.d= folder. Now
+you can simply symlink it to either =~/.emacs= or
+=~/.emacs.d/init.el=. Your emacs will now load this configuration file
 by default.
 
 * General Settings
