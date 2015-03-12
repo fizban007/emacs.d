@@ -247,7 +247,80 @@ this list and install any package in this list which is missing from
 the system. Note that since this is the first time we define this
 global variable, =defvar= is the correct command to use instead of
 =setq=, which is supposed to set variables instead of creating them.
-#+BEGIN_SRC emacs-lisp
+#+NAME: my-packages
+| Name                    | Description                                              |
+|-------------------------+----------------------------------------------------------|
+| ace-jump-mode           | Easily jump to a specific location in the same screen.   |
+| ace-window              | Same as ace-jump, but for windows.                       |
+| ag                      | Super-fast file content search in a code project.        |
+| async                   | Execute an Emacs function in parallel.                   |
+| auctex                  | The Emacs LaTeX package.                                 |
+| auto-complete           | Auto completion package.                                 |
+| auto-complete-clang     | Auto completion using clang.                             |
+| cmake-mode              | Provides highlighting for cmake files.                   |
+| company                 | Another auto completion package.                         |
+| company-auctex          | Company plugin for AucTeX mode.                          |
+| company-irony           | Company plugin for irony mode.                           |
+| company-c-headers       | Company plugin for detecting c/c++ header files.         |
+| concurrent              | Another interface to manage async tasks.                 |
+| cpputils-cmake          | Detect c++ settings from a cmake file.                   |
+| ctable                  | Framework to display nice table views.                   |
+| dash                    | A modern list api for emacs.                             |
+| dired+                  | Improved dired with many features.                       |
+| epc                     | Emacs peer process communication stack.                  |
+| epl                     | Emacs package library.                                   |
+| ess                     | Emacs Speaks Statistics, an R interface.                 |
+| evil                    | Vim mode for Emacs.                                      |
+| evil-leader             | Replacing the leader in evil mode.                       |
+| evil-nerd-commenter     | Easily comment/uncomment lines and regions in evil mode. |
+| evil-surround           | Port of the vim surround plugin.                         |
+| flx-ido                 | Fuzzy matching for ido.                                  |
+| flycheck                | Instant error check for buffers.                         |
+| flycheck-google-cpplint | Checking google C++ style compliance.                    |
+| function-args           | Function arguments for C++ using semantic.               |
+| geiser                  | A scheme interpreter interface for Emacs.                |
+| ggtags                  | Interface to the GNU Global tags.                        |
+| google-c-style          | Google C/C++ style.                                      |
+| haskell-mode            | Programming mode for Haskell language.                   |
+| helm                    | Command completion framework and more.                   |
+| helm-ag                 | Helm interface with the ag searcher.                     |
+| helm-projectile         | Helm integration with Projectile.                        |
+| helm-gtags              | Helm integration with gtags.                             |
+| ido-vertical-mode       | Make ido menus vertical like Helm.                       |
+| irony                   | C++ completion server.                                   |
+| js2-mode                | Excellent javascript mode.                               |
+| lua-mode                | Lua language mode.                                       |
+| magit                   | Best Git wrapper.                                        |
+| markdown-mode           | Mode for editting markdown files.                        |
+| neotree                 | Displays filesystem contents in a side panel.            |
+| nlinum                  | Faster line number display.                              |
+| org                     | New version of the Org-mode.                             |
+| org-jekyll              | Engine to power a Jekyll static site from an org buffer. |
+| ox-reveal               | Reveal.js export for org-mode.                           |
+| paradox                 | A pretty good package.el wrapper.                        |
+| paredit                 | Traditional lisp parenthesis editor.                     |
+| pkgbuild-mode           | Mode for editting Archlinux PKGBUILD files.              |
+| popup                   | Library for making popup windows in Emacs.               |
+| projectile              | Project management in Emacs.                             |
+| request                 | Network request library.                                 |
+| session                 | Saving cross-session history.                            |
+| slime                   | Superior Lisp Interaction Mode for Emacs.                |
+| smartparens             | A good parenthesis utility.                              |
+| smart-mode-line         | Makes the Emacs modeline better-looking.                 |
+| smex                    | A smart M-x enhancement for Emacs based on ido.          |
+| solarized-theme         | The Solarized theme ported to Emacs.                     |
+| tabbar                  | Displays a tab bar for Emacs.                            |
+| tabbar-ruler            | A good tabbar theme.                                     |
+| undo-tree               | Records undo history in a tree-style structure.          |
+| use-package             | Simplifies package loading.                              |
+| wanderlust              | The Emacs email client.                                  |
+| websocket               | Access the web socket in Emacs.                          |
+| wgrep                   | Interactive grep buffer.                                 |
+| wgrep-ag                | Makes Ag result buffer interactive too.                  |
+| yasnippet               | Snippets for Emacs.                                      |
+| zotelo                  | Access Zotero library through MozRepl interface.         |
+
+#+BEGIN_SRC emacs-lisp :tangle no
   (defvar my-required-packages
     '(ace-jump-mode
       ace-window
@@ -256,7 +329,6 @@ global variable, =defvar= is the correct command to use instead of
       auctex
       auto-complete
       auto-complete-clang
-      bind-key
       cmake-mode
       company
       company-auctex
@@ -273,13 +345,11 @@ global variable, =defvar= is the correct command to use instead of
       evil
       evil-leader
       evil-nerd-commenter
-      evil-paredit
       evil-surround
       flx
       flx-ido
       flycheck
       flycheck-google-cpplint
-      fold-dwim
       function-args
       geiser
       ggtags
@@ -336,13 +406,14 @@ much use.
 Now with =my-required-packages= defined, we need to install these
 packages if they are not already in the system. The following code is
 copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][here]].
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :exports code :var data=my-packages :colnames yes
+
 (require 'cl)
 
 ; method to check if all packages are installed
 (defun packages-installed-p ()
-  (loop for p in my-required-packages
-        when (not (package-installed-p p)) do (return nil)
+  (cl-loop for p in data
+        when (not (package-installed-p (intern (car p)))) do (return nil)
         finally (return t)))
 
 ; if not all packages are installed, check one by one and install the missing ones.
@@ -352,9 +423,9 @@ copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-ma
   (package-refresh-contents)
   (message "%s" " done.")
   ; install the missing packages
-  (dolist (p my-required-packages)
-    (when (not (package-installed-p p))
-      (package-install p))))
+  (dolist (p data)
+    (when (not (package-installed-p (intern (car p))))
+      (package-install (intern (car p))))))
 #+END_SRC
 
 The new function =packages-installed-p= checks if all the packages in
@@ -1799,6 +1870,13 @@ Simply turns on smart parens mode globally.
 
   ;; Hightlight matching pairs
   (show-smartparens-global-mode t)
+#+END_SRC
+
+** Dired+
+=dired+= is an improved version of =dired= which is the file manager
+of Emacs. The setup for =dired+= is simple:
+#+BEGIN_SRC emacs-lisp
+(use-package dired+)
 #+END_SRC
 
 * Language modes
