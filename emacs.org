@@ -289,11 +289,11 @@ the code block below.
 | ido-vertical-mode       | Make ido menus vertical like Helm.                       |
 | irony                   | C++ completion server.                                   |
 | js2-mode                | Excellent javascript mode.                               |
+| linum-off               | Selectively turn off linum-mode for some modes.          |
 | lua-mode                | Lua language mode.                                       |
 | magit                   | Best Git wrapper.                                        |
 | markdown-mode           | Mode for editting markdown files.                        |
 | neotree                 | Displays filesystem contents in a side panel.            |
-| nlinum                  | Faster line number display.                              |
 | org                     | New version of the Org-mode.                             |
 | org-jekyll              | Engine to power a Jekyll static site from an org buffer. |
 | ox-reveal               | Reveal.js export for org-mode.                           |
@@ -372,9 +372,9 @@ can use the =use-package= command to selectively load packages and
 defer their initialization until the package is actually needed. The
 full documentation can be found on the [[https://github.com/jwiegley/use-package][official website]].
 #+BEGIN_SRC emacs-lisp
-;; The first line is to prevent problems with use-package
-(require 'ert)
-(require 'use-package)
+  ;; The first line is to prevent problems with use-package
+  (require 'ert)
+  (require 'use-package)
 #+END_SRC
 
 * Look and Feel
@@ -406,8 +406,8 @@ monospace font will be used.
 #+BEGIN_SRC emacs-lisp
   ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
   ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
-  (add-to-list 'initial-frame-alist '(font . "Monaco-9"))
-  (add-to-list 'default-frame-alist '(font . "Monaco-9"))
+  (add-to-list 'initial-frame-alist '(font . "Monaco-10"))
+  (add-to-list 'default-frame-alist '(font . "Monaco-10"))
   ;; (defvar my-font-family "Consolas for Powerline")
   (defvar my-font-family "Monaco")
   ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
@@ -417,18 +417,6 @@ monospace font will be used.
   (defvar my-theme 'solarized-dark)
   ;; (defvar my-theme 'lush)
 
-  (defun my-load-theme (&optional frame)
-    (load-theme my-theme t)
-    ;; Remove modeline under and over lines
-    (set-face-attribute
-     'mode-line nil
-     :underline nil
-     :overline nil)
-    (set-face-attribute
-     'mode-line-inactive nil
-     :underline nil
-     :overline nil)
-    )
 #+END_SRC
 
 ** Tabbar-ruler
@@ -452,37 +440,6 @@ tabbar theme to be very good.
       (tabbar-install-faces)
     ))
 #+END_SRC
-
-** Theme
-The best theme I have found up to now is Solarized. It comes in both
-dark and light variants and while I prefer the dark version for most
-of the time, the light version is useful when editting in some light
-conditions. The following code loads =solarized-dark= as the default
-theme.
-
-#+BEGIN_SRC emacs-lisp
-    ;; (defun my-reload-theme (frame)
-    ;;   (select-frame frame)
-    ;;   (my-load-theme frame))
-
-    (if (daemonp)
-        (add-hook 'after-make-frame-functions
-                  (lambda (frame)
-                    (my-load-theme)))
-      (my-load-theme))
-#+END_SRC
-
-Note that Solarized theme will require 24bit color support in
-terminal, otherwise it is very difficult to get the same look-and-feel
-even when the terminal is set to Solarized theme. Even in emacs 24.4
-the patch for 24bit color support is not merged into trunk, so one
-either needs to compile emacs with the patch, or just switch to
-another theme when using emacs in terminal.
-
-The only use case I need for emacs to run in terminal is to remotely
-edit a file. But now I start to use tramp a lot more often so that I
-can use the local emacs installation to edit it, circumventing the
-need to invoke emacs in terminal.
 
 ** Smart mode line
 The mode line is a very important part of Emacs, while often being the
@@ -580,20 +537,73 @@ needed for tabbar. The config is [[tabbar-evil][here]].
 ** Line Numbers
 The following block shows line numbers to the left of the buffer. It
 is usually a good thing to have line numbers available to refer
-to. =nlinum= is vastly superior in performance to the bundled =linum=
-mode, especially in long org-mode buffers, therefore we use it here:
+to. =nlinum= seems to have a much better performance, however its line
+numbers seem to be not very reliable. Here we just use the =linum=
+package bundled with Emacs, but with some customizations:
 
 #+BEGIN_SRC emacs-lisp
-  (use-package nlinum
+  (use-package linum
     :init
     (progn
       ;;(nlinum-mode 1)
       ;; (line-number-mode 1)
-      (global-nlinum-mode 1)
+      (require 'linum-off)
+      (global-linum-mode 1)
+      (setq linum-delay t)
+      (setq linum-eager nil)
+
       ;;       (use-package linum-relative
       ;;         :ensure linum-relative)
       ))
 #+END_SRC
+
+** Theme
+The best theme I have found up to now is Solarized. It comes in both
+dark and light variants and while I prefer the dark version for most
+of the time, the light version is useful when editting in some light
+conditions. The following code loads =solarized-dark= as the default
+theme.
+
+#+BEGIN_SRC emacs-lisp
+  ;; (defun my-reload-theme (frame)
+  ;;   (select-frame frame)
+  ;;   (my-load-theme frame))
+  (defun my-load-theme (&optional frame)
+    (load-theme my-theme t)
+    (sml/apply-theme sml/theme)
+    ;; Remove modeline under and over lines
+    (set-face-attribute
+     'mode-line nil
+     :underline nil
+     :overline nil)
+    (set-face-attribute
+     'mode-line-inactive nil
+     :underline nil
+     :overline nil)
+    ;; This is mainly to prevent org-mode buffers have a variable line
+    ;; number font
+    (set-face-attribute 'linum nil :family my-font-family :height 100)
+    (tabbar-install-faces)
+    )
+
+  (if (daemonp)
+      (add-hook 'after-make-frame-functions
+                (lambda (frame)
+                  (my-load-theme)))
+    (my-load-theme))
+#+END_SRC
+
+Note that Solarized theme will require 24bit color support in
+terminal, otherwise it is very difficult to get the same look-and-feel
+even when the terminal is set to Solarized theme. Even in emacs 24.4
+the patch for 24bit color support is not merged into trunk, so one
+either needs to compile emacs with the patch, or just switch to
+another theme when using emacs in terminal.
+
+The only use case I need for emacs to run in terminal is to remotely
+edit a file. But now I start to use tramp a lot more often so that I
+can use the local emacs installation to edit it, circumventing the
+need to invoke emacs in terminal.
 
 ** Colorizing Compilation Buffer
 This setting enables ansi-color in compilation buffer. Very useful
