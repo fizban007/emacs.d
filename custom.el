@@ -40,9 +40,13 @@
     ("6a37be365d1d95fad2f4d185e51928c789ef7a4ccf17e7ca13ad63a8bf5b922f" default)))
  '(eclim-executable "/opt/cuda/libnsight/plugins/org.eclim_1.7.19/bin/eclim")
  '(eclimd-default-workspace "~/Programs")
+ '(linum-disabled-modes-list
+   (quote
+    (eshell-mode wl-summary-mode compilation-mode text-mode dired-mode)))
  '(magit-diff-use-overlays nil)
  '(magit-use-overlays nil)
  '(org-export-backends (quote (ascii html icalendar latex md)))
+ '(paradox-github-token "99f28325b00944af3822a25547380279334b91a4")
  '(projectile-mode-line (quote (:eval (format " P[%s]" (projectile-project-name)))))
  '(projectile-other-file-alist
    (quote

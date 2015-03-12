@@ -5,11 +5,19 @@
 #+OPTIONS: toc:2 num:nil ^:nil
 
 * Introduction
-This is a new effort to making a unified and portable Emacs init
+This is a new effort of making a unified and portable Emacs init
 configuration using org-mode. The idea is to have a simple =emacs.el=
-in =.emacs.d= directory, while tangling all the components from this
-single file. At the same time, this file will act as a documentation
-of whatever is going into the =emacs.el= init file.
+in =.emacs.d= directory, which is the result of tangling all the
+components from this self-documenting org file. At the same time, this
+file will act as a documentation of whatever is going into the
+=emacs.el= init file.
+
+The way to use this file with a vanilla emacs installation is to put
+this file in =~/.emacs.d=, open it in emacs, and tangle it using =C-c C-v
+t=. The result is a file named =emacs.el= in your =~/.emacs.d= folder. Now
+you can simply symlink it to either =~/.emacs= or
+=~/.emacs.d/init.el=. Your emacs will now load this configuration file
+by default.
 
 * General Settings
 The settings here are independent of any external packages, but rather
@@ -32,7 +40,7 @@ The comparison of lexical vs dynamic binding is summarized pretty well
 in [[http://www.emacswiki.org/emacs/DynamicBindingVsLexicalBinding][this article]] on Emacs wiki. In general dynamic binding is dispised
 by most programmers, and people quote this as one of the weaknesses of
 Emacs-lisp. Therefore it is desirable to have this line at the
-beginning of our init.el
+beginning of our =init.el=.
 
 ** Personal Settings
 First things first. These settings are basically "who-i-am" and
@@ -93,20 +101,20 @@ beginners starting with Emacs find it a monster to use).
       (unless (file-writable-p file)
         (setq file (concat "/sudo:root@localhost:" file)))
       (find-file file)))
-  ;; or some other keybinding...
+  ;; give it some keybinding...
   (global-set-key (kbd "C-x F") 'find-file-as-root)
 
   ;; Use C-x C-e to evaluate region
   (global-set-key (kbd "C-x C-e") 'eval-region)
 
-  ;; Pane manipulation
+  ;; Pane manipulation, taken from the advice on Xah's blog
   (global-set-key (kbd "M-1") 'delete-other-windows) ; expand current pane
   (global-set-key (kbd "M-5") 'split-window-vertically) ; split pane top/bottom
   (global-set-key (kbd "M-4") 'split-window-horizontally) ; split pane top/bottom
   (global-set-key (kbd "M-3") 'delete-window) ; close current pane
 
   ;; Garbage collection, prevent gc for a longer period of time
-  (setq gc-cons-threshold 20000000)
+  (setq gc-cons-threshold 10000000)
 
   ;; Auto revert buffers which are modified elsewhere
   (global-auto-revert-mode 1)
@@ -173,21 +181,28 @@ point reaches the beginning or end of the buffer, stop there."
 #+END_SRC
 
 This short block checks whether the file under edit contains a
-shebang, and if yes, makes it executable.
+shebang (e.g. =#!/bin/bash=), and if yes, makes it executable.
 #+BEGIN_SRC emacs-lisp
 (add-hook 'after-save-hook
   'executable-make-buffer-file-executable-if-script-p)
 #+END_SRC
 
-The variable redisplay-dont-pause, when set to t, will cause Emacs to fully redraw the display before it processes queued input events. This may have slight performance implications if you’re aggressively mouse scrolling a document or rely on your keyboard’s auto repeat feature. For most of us, myself included, it’s probably a no-brainer to switch it on.
+The variable redisplay-dont-pause, when set to t, will cause Emacs to
+fully redraw the display before it processes queued input events. This
+may have slight performance implications if you’re aggressively mouse
+scrolling a document or rely on your keyboard’s auto repeat
+feature. For most of us, myself included, it’s probably a no-brainer
+to switch it on.
 #+BEGIN_SRC emacs-lisp
 (setq redisplay-dont-pause t)
 #+END_SRC
 
 * Package Repositories
-First we need to set up some package repositories to establish a
-consistent way to get packages. We use the official gnu repo, as well
-as the third-party melpa and marmalade repos. From [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][this source]], the
+Now we configure external packages for emacs. This is done using the
+excellent package management tool that comes with emacs itself. First
+we need to set up some package repositories to establish a consistent
+way to get packages. We use the official gnu repo, as well as the
+third-party melpa and marmalade repos. From [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][this source]], the
 difference between these two repos and the official repo is that:
 
 + melpa is a package archive managed by Milkypostman. It's the easiest
@@ -222,91 +237,88 @@ Package management is done through the official =package.el=.
 
 After =(package-initialize)= all the directories under
 =~/.emacs.d/elpa= will be added to the load-path, and therefore the
-packages accessible from Emacs. Most of the other packages will no
-longer need to set their load-path anymore.
+packages become accessible from Emacs. Most of the other packages will
+no longer need to set their load-path anymore.
 
 ** List of essential packages
 Here we define a list of essential packages that we can't live
 without. After package archives are initialized, Emacs will go through
 this list and install any package in this list which is missing from
-the system. Note that since this is the first time we define this
-global variable, =defvar= is the correct command to use instead of
-=setq=, which is supposed to set variables instead of creating them.
-#+BEGIN_SRC emacs-lisp
-  (defvar my-required-packages
-    '(ace-jump-mode
-      ace-window
-      ag
-      async
-      auctex
-      auto-complete
-      auto-complete-clang
-      bind-key
-      cmake-mode
-      company
-      company-auctex
-      company-irony
-      company-c-headers
-      concurrent
-      cpputils-cmake
-      ctable
-      dash
-      dired+
-      epc
-      epl
-      ess
-      evil
-      evil-leader
-      evil-nerd-commenter
-      evil-paredit
-      evil-surround
-      flx
-      flx-ido
-      flycheck
-      flycheck-google-cpplint
-      fold-dwim
-      function-args
-      geiser
-      ggtags
-      google-c-style
-      haskell-mode
-      helm
-      helm-ag
-      helm-projectile
-      helm-gtags
-      ido-vertical-mode
-      irony
-      js2-mode
-      lua-mode
-      magit
-      markdown-mode
-      neotree
-      org
-      org-jekyll
-      ox-reveal
-      paradox
-      paredit
-      pkgbuild-mode
-      popup
-      projectile
-      request
-      session
-      slime
-      smartparens
-      smart-mode-line
-      smex
-      solarized-theme
-      tabbar
-      tabbar-ruler
-      undo-tree
-      use-package
-      wanderlust
-      websocket
-      wgrep
-      wgrep-ag
-      yasnippet
-      zotelo) "List of packages to ensure installed at launch")
-#+END_SRC
+the system. We define the list using an org table and import it into
+the code block below.
+
+#+NAME: my-packages
+| Name                    | Description                                              |
+|-------------------------+----------------------------------------------------------|
+| ace-jump-mode           | Easily jump to a specific location in the same screen.   |
+| ace-window              | Same as ace-jump, but for windows.                       |
+| ag                      | Super-fast file content search in a code project.        |
+| async                   | Execute an Emacs function in parallel.                   |
+| auctex                  | The Emacs LaTeX package.                                 |
+| auto-complete           | Auto completion package.                                 |
+| auto-complete-clang     | Auto completion using clang.                             |
+| cmake-mode              | Provides highlighting for cmake files.                   |
+| company                 | Another auto completion package.                         |
+| company-auctex          | Company plugin for AucTeX mode.                          |
+| company-irony           | Company plugin for irony mode.                           |
+| company-c-headers       | Company plugin for detecting c/c++ header files.         |
+| concurrent              | Another interface to manage async tasks.                 |
+| cpputils-cmake          | Detect c++ settings from a cmake file.                   |
+| ctable                  | Framework to display nice table views.                   |
+| dash                    | A modern list api for emacs.                             |
+| dired+                  | Improved dired with many features.                       |
+| epc                     | Emacs peer process communication stack.                  |
+| epl                     | Emacs package library.                                   |
+| ess                     | Emacs Speaks Statistics, an R interface.                 |
+| evil                    | Vim mode for Emacs.                                      |
+| evil-leader             | Replacing the leader in evil mode.                       |
+| evil-nerd-commenter     | Easily comment/uncomment lines and regions in evil mode. |
+| evil-surround           | Port of the vim surround plugin.                         |
+| flx-ido                 | Fuzzy matching for ido.                                  |
+| flycheck                | Instant error check for buffers.                         |
+| flycheck-google-cpplint | Checking google C++ style compliance.                    |
+| function-args           | Function arguments for C++ using semantic.               |
+| geiser                  | A scheme interpreter interface for Emacs.                |
+| ggtags                  | Interface to the GNU Global tags.                        |
+| google-c-style          | Google C/C++ style.                                      |
+| haskell-mode            | Programming mode for Haskell language.                   |
+| helm                    | Command completion framework and more.                   |
+| helm-ag                 | Helm interface with the ag searcher.                     |
+| helm-projectile         | Helm integration with Projectile.                        |
+| helm-gtags              | Helm integration with gtags.                             |
+| ido-vertical-mode       | Make ido menus vertical like Helm.                       |
+| irony                   | C++ completion server.                                   |
+| js2-mode                | Excellent javascript mode.                               |
+| linum-off               | Selectively turn off linum-mode for some modes.          |
+| lua-mode                | Lua language mode.                                       |
+| magit                   | Best Git wrapper.                                        |
+| markdown-mode           | Mode for editting markdown files.                        |
+| neotree                 | Displays filesystem contents in a side panel.            |
+| org                     | New version of the Org-mode.                             |
+| org-jekyll              | Engine to power a Jekyll static site from an org buffer. |
+| ox-reveal               | Reveal.js export for org-mode.                           |
+| paradox                 | A pretty good package.el wrapper.                        |
+| paredit                 | Traditional lisp parenthesis editor.                     |
+| pkgbuild-mode           | Mode for editting Archlinux PKGBUILD files.              |
+| popup                   | Library for making popup windows in Emacs.               |
+| projectile              | Project management in Emacs.                             |
+| request                 | Network request library.                                 |
+| session                 | Saving cross-session history.                            |
+| slime                   | Superior Lisp Interaction Mode for Emacs.                |
+| smartparens             | A good parenthesis utility.                              |
+| smart-mode-line         | Makes the Emacs modeline better-looking.                 |
+| smex                    | A smart M-x enhancement for Emacs based on ido.          |
+| solarized-theme         | The Solarized theme ported to Emacs.                     |
+| tabbar                  | Displays a tab bar for Emacs.                            |
+| tabbar-ruler            | A good tabbar theme.                                     |
+| undo-tree               | Records undo history in a tree-style structure.          |
+| use-package             | Simplifies package loading.                              |
+| wanderlust              | The Emacs email client.                                  |
+| websocket               | Access the web socket in Emacs.                          |
+| wgrep                   | Interactive grep buffer.                                 |
+| wgrep-ag                | Makes Ag result buffer interactive too.                  |
+| yasnippet               | Snippets for Emacs.                                      |
+| zotelo                  | Access Zotero library through MozRepl interface.         |
 
 This is a really long list for "essential" packages. However it is
 hard to slim it down because so many of them are useful. At least we
@@ -316,16 +328,18 @@ be important enough I'll add it to this list. I'll also /try/ to
 update this list periodically by removing packages that I don't find
 much use.
 
-Now with =my-required-packages= defined, we need to install these
+Now with the list of packages defined, we need to install these
 packages if they are not already in the system. The following code is
-copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][here]].
-#+BEGIN_SRC emacs-lisp
+copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][here]]. =data= in the following code block is imported from
+the above table (that is why we need the ugly =inter= and =car=).
+
+#+BEGIN_SRC emacs-lisp :exports code :var data=my-packages :colnames yes
 (require 'cl)
 
 ; method to check if all packages are installed
 (defun packages-installed-p ()
-  (loop for p in my-required-packages
-        when (not (package-installed-p p)) do (return nil)
+  (cl-loop for p in data
+        when (not (package-installed-p (intern (car p)))) do (return nil)
         finally (return t)))
 
 ; if not all packages are installed, check one by one and install the missing ones.
@@ -335,9 +349,9 @@ copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-ma
   (package-refresh-contents)
   (message "%s" " done.")
   ; install the missing packages
-  (dolist (p my-required-packages)
-    (when (not (package-installed-p p))
-      (package-install p))))
+  (dolist (p data)
+    (when (not (package-installed-p (intern (car p))))
+      (package-install (intern (car p))))))
 #+END_SRC
 
 The new function =packages-installed-p= checks if all the packages in
@@ -348,8 +362,8 @@ the predicate returns nil, in which case it will first refresh the
 package contents, and then install any package which does not satisfy
 =package-installed-p=.
 
-The rest of this document is dedicated to loading and configuration of
-these packages.
+The rest of this document (at least most of it) is dedicated to
+loading and configuration of these packages.
 
 ** Use-package macro
 =use-package= is a package to simplify loading packages. Instead of
@@ -358,9 +372,9 @@ can use the =use-package= command to selectively load packages and
 defer their initialization until the package is actually needed. The
 full documentation can be found on the [[https://github.com/jwiegley/use-package][official website]].
 #+BEGIN_SRC emacs-lisp
-;; The first line is to prevent problems with use-package
-(require 'ert)
-(require 'use-package)
+  ;; The first line is to prevent problems with use-package
+  (require 'ert)
+  (require 'use-package)
 #+END_SRC
 
 * Look and Feel
@@ -385,11 +399,15 @@ propietary font, it can be found somewhere on the internet, and it
 turns out to be really good. The letters are full and clear, and the
 spacing are just right too.
 
+Edit: Now my preferred font is Monaco, which by the way is also a
+propietary font. If it is not in your system then maybe the default
+monospace font will be used.
+
 #+BEGIN_SRC emacs-lisp
   ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
   ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
-  (add-to-list 'initial-frame-alist '(font . "Monaco-9"))
-  (add-to-list 'default-frame-alist '(font . "Monaco-9"))
+  (add-to-list 'initial-frame-alist '(font . "Monaco-10"))
+  (add-to-list 'default-frame-alist '(font . "Monaco-10"))
   ;; (defvar my-font-family "Consolas for Powerline")
   (defvar my-font-family "Monaco")
   ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
@@ -399,21 +417,11 @@ spacing are just right too.
   (defvar my-theme 'solarized-dark)
   ;; (defvar my-theme 'lush)
 
-  (defun my-load-theme (&optional frame)
-    (load-theme my-theme t)
-    ;; Remove modeline under and over lines
-    (set-face-attribute
-     'mode-line nil
-     :underline nil
-     :overline nil)
-    (set-face-attribute
-     'mode-line-inactive nil
-     :underline nil
-     :overline nil)
-    )
 #+END_SRC
 
 ** Tabbar-ruler
+I never use the ruler component of tabbar-ruler. I just find its
+tabbar theme to be very good. 
 #+BEGIN_SRC emacs-lisp
   (setq tabbar-ruler-global-tabbar t) ; If you want tabbar
   ;; (setq tabbar-ruler-global-ruler t) ; if you want a global ruler
@@ -427,59 +435,38 @@ spacing are just right too.
       (tabbar-ruler-group-by-projectile-project)
       (global-set-key [\M-right] 'tabbar-ruler-tabbar-forward-tab)
       (global-set-key [\M-left] 'tabbar-ruler-tabbar-backward-tab)
+      ;; This is to prevent tabbar-ruler eating a lot of cpu resources
       (setq tabbar-ruler-movement-timer-delay 1000000)
       (tabbar-install-faces)
     ))
 #+END_SRC
 
-** Theme
-The best theme I have found up to now is Solarized. It comes in both
-dark and light variants and while I prefer the dark version for most
-of the time, the light version is useful when editting in some light
-conditions. The following code loads =solarized-dark= as the default
-theme.
-
-#+BEGIN_SRC emacs-lisp
-    ;; (defun my-reload-theme (frame)
-    ;;   (select-frame frame)
-    ;;   (my-load-theme frame))
-
-    (if (daemonp)
-        (add-hook 'after-make-frame-functions
-                  (lambda (frame)
-                    (my-load-theme)))
-      (my-load-theme))
-#+END_SRC
-
-Note that Solarized theme will require 24bit color support in
-terminal, otherwise it is very difficult to get the same look-and-feel
-even when the terminal is set to Solarized theme. In Emacs 24.4 there
-seems to be built-in 24bit color support in terminals, but in prior
-versions one might need to apply a patch. Note also that the terminal
-application needs to support 24bit color. I'm using konsole right now
-and it works great with terminal mode emacs.
-
 ** Smart mode line
 The mode line is a very important part of Emacs, while often being the
 most ugly part with some unexplicable symbols. The =smart-mode-line=
 package revamps the mode line and makes it actually useful and more
-pleasing to look at. Here is the config (note that this is our first
-package config which uses =use-package=!)
+pleasing to look at. Here is the config:
 
 #+BEGIN_SRC emacs-lisp
   (use-package smart-mode-line
     :init
     (progn 
+      ;; One could also set the theme to respectful to unify it with
+      ;; Solarized theme, but I find dark to be better-looking
       (setq sml/theme 'dark)
+      ;; (setq sml/theme 'respectful)
       (setq sml/mode-width 'right)
       (setq sml/shorten-modes t)
-      ;; (setq sml/theme 'respectful)
       (setq sml/no-confirm-load-theme t)
       (if after-init-time (sml/setup)
         (add-hook 'after-init-hook 'sml/setup))))
 #+END_SRC
 
 ** Powerline
+This package gives the modeline a powerline look. However I don't like
+the default colors and configuration, and don't feel like going into
+details in configuration. Why can't the author ship with a better
+default theme!?
 #+BEGIN_SRC emacs-lisp :tangle no
   ;; (use-package powerline)
   (require 'powerline)
@@ -494,7 +481,12 @@ session. Now a tab bar is usually not sufficient to show all open
 buffers and relying on the bar to find buffers is usually not the most
 efficient way. However, when just browsing it still very useful to
 easily keep track of what files are open without using =C-x b= every
-time. The =tabbar= package solves this problem and is the best I've found.
+time. The =tabbar= package solves this problem and is the best I've
+found.
+
+Edit: Since we now use =tabbar-ruler= for the tab bar, this code block
+is disabled. However =tabbar= is still installed as a dependency of
+=tabbar-ruler=.
 
 #+BEGIN_SRC emacs-lisp :tangle no
   (use-package tabbar
@@ -545,8 +537,9 @@ needed for tabbar. The config is [[tabbar-evil][here]].
 ** Line Numbers
 The following block shows line numbers to the left of the buffer. It
 is usually a good thing to have line numbers available to refer
-to. I'm still not sure if =nlinum= or =linum= is better at displaying
-the line numbers more efficiently. Here we use =linum=.
+to. =nlinum= seems to have a much better performance, however its line
+numbers seem to be not very reliable. Here we just use the =linum=
+package bundled with Emacs, but with some customizations:
 
 #+BEGIN_SRC emacs-lisp
   (use-package linum
@@ -554,11 +547,63 @@ the line numbers more efficiently. Here we use =linum=.
     (progn
       ;;(nlinum-mode 1)
       ;; (line-number-mode 1)
+      (require 'linum-off)
       (global-linum-mode 1)
+      (setq linum-delay t)
+      (setq linum-eager nil)
+
       ;;       (use-package linum-relative
       ;;         :ensure linum-relative)
       ))
 #+END_SRC
+
+** Theme
+The best theme I have found up to now is Solarized. It comes in both
+dark and light variants and while I prefer the dark version for most
+of the time, the light version is useful when editting in some light
+conditions. The following code loads =solarized-dark= as the default
+theme.
+
+#+BEGIN_SRC emacs-lisp
+  ;; (defun my-reload-theme (frame)
+  ;;   (select-frame frame)
+  ;;   (my-load-theme frame))
+  (defun my-load-theme (&optional frame)
+    (load-theme my-theme t)
+    (sml/apply-theme sml/theme)
+    ;; Remove modeline under and over lines
+    (set-face-attribute
+     'mode-line nil
+     :underline nil
+     :overline nil)
+    (set-face-attribute
+     'mode-line-inactive nil
+     :underline nil
+     :overline nil)
+    ;; This is mainly to prevent org-mode buffers have a variable line
+    ;; number font
+    (set-face-attribute 'linum nil :family my-font-family :height 100)
+    (tabbar-install-faces)
+    )
+
+  (if (daemonp)
+      (add-hook 'after-make-frame-functions
+                (lambda (frame)
+                  (my-load-theme)))
+    (my-load-theme))
+#+END_SRC
+
+Note that Solarized theme will require 24bit color support in
+terminal, otherwise it is very difficult to get the same look-and-feel
+even when the terminal is set to Solarized theme. Even in emacs 24.4
+the patch for 24bit color support is not merged into trunk, so one
+either needs to compile emacs with the patch, or just switch to
+another theme when using emacs in terminal.
+
+The only use case I need for emacs to run in terminal is to remotely
+edit a file. But now I start to use tramp a lot more often so that I
+can use the local emacs installation to edit it, circumventing the
+need to invoke emacs in terminal.
 
 ** Colorizing Compilation Buffer
 This setting enables ansi-color in compilation buffer. Very useful
@@ -575,13 +620,17 @@ especially with cmake generated makefiles.
 #+END_SRC
 
 ** Other settings
-Here are uncategorized visual settings, most of them trivial.
+Here are uncategorized visual settings, most of them trivial. The
+reason they are not in the "General Settings" section is because they
+mostly deal with visuals.
 
 #+BEGIN_SRC emacs-lisp
   ;; Hide the scroll bar
   (scroll-bar-mode -1)
 
-  ;; Use C-c s to toggle visibility of scroll bar
+  ;; Use C-c s to toggle visibility of scroll bar. The scroll bar is
+  ;; actually useful sometimes to get an analog feedback of where you
+  ;; are in the buffer
   (global-set-key (kbd "C-c s") 'scroll-bar-mode)
 
   ;; Hide the menu bar
@@ -593,7 +642,8 @@ Here are uncategorized visual settings, most of them trivial.
   ;; Display time in mode line
   (display-time)
 
-  ;; Show matching brackets
+  ;; Show matching brackets. When smart-parens-mode is turned on, this
+  ;; will be disabled.
   (show-paren-mode 1)
 
   ;; Highlighting TODO, FIXME and BUG in programming modes
@@ -630,6 +680,7 @@ forgotten the source.
   (setq org-directory "~/.org/")
   ;; fontify code in code blocks
   (setq org-src-fontify-natively t)
+  ;; Agenda settings
   (setq org-agenda-ndays 7)
   (setq org-agenda-repeating-timestamp-show-all nil)
   (setq org-agenda-restore-windows-after-quit t)
@@ -655,11 +706,13 @@ forgotten the source.
   (setq org-use-tag-inheritance nil)
   (setq org-confirm-babel-evaluate nil)
 
-  (setq org-todo-keyword-faces
-        '(("URGENT" . "red") ("TODO" . org-warning) ("STARTED" . "orange") ("APPT" . "lightblue") ("WAITING" . "lightgreen")))
-
+  ;; Add new todo keywords for all org-mode buffers
   (setq org-todo-keywords
         '((sequence "TODO(t)" "URGENT(u)" "STARTED(s)" "WAITING(w)" "MAYBE(m)" "|" "DONE(d)" "CANCELED(c)" "DEFERRED(d)")))
+
+  ;; Add new todo keyward faces
+  (setq org-todo-keyword-faces
+        '(("URGENT" . "red") ("TODO" . org-warning) ("STARTED" . "orange") ("APPT" . "lightblue") ("WAITING" . "lightgreen")))
 
   (defun org-summary-todo (n-done n-not-done)
      "Switch entry to DONE when all subentries are done, to TODO otherwise."
@@ -710,6 +763,9 @@ when embedding latex directly into org-mode.
       ;;         "pdflatex -interaction nonstopmode %f")) ;; for multiple passes
 
       ;; Latex preview setting
+
+      ;; the imagemagick background gives me better foreground colors
+      ;; than the other background
       (setq org-latex-create-formula-image-program 'imagemagick)
       (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.4))
       (setq org-latex-listings t)))
@@ -747,10 +803,11 @@ block for ox-publish:
 
 ** Markdown Export
 I'd like to add export to markdown mode for ease of writing a
-README.md for github. Here is how
+=README.md= for GitHub. Here is how
 #+BEGIN_SRC emacs-lisp
 (add-to-list 'org-export-backends 'md)
 #+END_SRC
+This gives a new export option when pressing =C-e=.
 
 ** External agenda update
 This function was taken from other blogs which solves the problem of
@@ -792,7 +849,8 @@ date. Here are some of the templates I've accumulated over the years:
 #+END_SRC
 
 ** Misc Settings
-Here are some further settings for org-mode, including key bindings, etc.
+Here are some further settings for org-mode, including key bindings,
+etc. These are mostly copied from elsewhere too.
 #+BEGIN_SRC emacs-lisp
     (add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\)$" . org-mode))
     (global-set-key "\C-cl" 'org-store-link)
@@ -823,18 +881,23 @@ Here are some further settings for org-mode, including key bindings, etc.
                                ))
 #+END_SRC
 
+The final word about org-mode is that company-mode will sometimes make
+text editing a lot less responsive. When writing a lot of text in
+org-mode, it is better to disable company, since you don't want to use
+it to complete English words anyway (most of the time).
+
 * Evil mode
 The =evil-mode= in Emacs is a package that simulates Vim behavior. It
 is the best of its kind in that it almost fully simulates all of Vim's
 behavior by adding a modal layer on top of Emacs's editing
 facilities. It is purely because of this package that I successfully
 made the transition from Vim to Emacs, and I suppose it is the same
-story for many others as well. In fact, this has been proposed as the
+story for many others as well. In fact, this has been proposed as The
 solution to the old Emacs problem: "Emacs is a pretty good operating
 system, but it could use a better text editor".
 
 Therefore we dedicate a whole section in our config file to this
-particular mode/package. Also since I use Colemak keyboard config,
+particular mode/package. Also since I use [[http://colemak.com][Colemak]] keyboard config,
 there are quite a few things to tweak from the default configuration
 to satisfy my needs.
 
@@ -846,6 +909,8 @@ to satisfy my needs.
     :config
     (progn 
       (add-hook 'prog-mode-hook 'hs-minor-mode)
+
+      ;; This is supposed to be a great thing, but I seldom use it!
       (use-package evil-surround
         :init
         (progn 
@@ -937,8 +1002,17 @@ to satisfy my needs.
           (global-set-key (kbd "M-;") 'comment-dwim) 
           (define-key evil-normal-state-map ",c " 'evilnc-comment-or-uncomment-lines)
           (define-key evil-visual-state-map ",c " 'evilnc-comment-or-uncomment-lines)
-          (define-key evil-normal-state-map ",cc" 'evilnc-copy-and-comment-lines)))
+          (define-key evil-normal-state-map ",cc" 'evilnc-copy-and-comment-lines)
+          (define-key evil-visual-state-map ",cc" 'evilnc-copy-and-comment-lines)
+          ))
       ;;   (define-key evil-normal-state-map ",cl" 'evilnc-comment-or-uncomment-to-the-line)
+      ;; Evil nerd commenter key bindings
+      ;; (global-set-key (kbd "M-;") 'evilnc-comment-or-uncomment-lines)
+      ;; (global-set-key (kbd "M-:") 'evilnc-comment-or-uncomment-to-the-line)
+      ;; (global-set-key (kbd "C-c c") 'evilnc-copy-and-comment-lines)
+      ;; (global-set-key (kbd "C-c p") nil)
+      ;;   (define-key evil-normal-state-map ",cp" 'evilnc-comment-or-uncomment-paragraphs)
+      ;;   (define-key evil-normal-state-map ",cr" 'comment-or-uncomment-region))
 
       (evil-declare-key 'normal org-mode-map
         "za" 'org-cycle
@@ -986,17 +1060,6 @@ to satisfy my needs.
       ))
   ;; (evilnc-default-hotkeys)
 
-  ;; that's the export function
-  ;; Evil nerd commenter key bindings
-  ;; (global-set-key (kbd "M-;") 'evilnc-comment-or-uncomment-lines)
-  ;; (global-set-key (kbd "M-:") 'evilnc-comment-or-uncomment-to-the-line)
-  ;; (global-set-key (kbd "C-c c") 'evilnc-copy-and-comment-lines)
-  ;; (global-set-key (kbd "C-c p") nil)
-  ;;   (define-key evil-normal-state-map ",cp" 'evilnc-comment-or-uncomment-paragraphs)
-  ;;   (define-key evil-normal-state-map ",cr" 'comment-or-uncomment-region))
-  ;; org mode
-
-
 #+END_SRC
 
 * Package Settings
@@ -1010,7 +1073,6 @@ would be a headache to keep track of all the inter-dependencies.
 Paradox is a package manager which is better than the built-in
 one. This is simply a one-line config which enables access to github with tokens
 #+BEGIN_SRC emacs-lisp
-  (setq paradox-github-token "99f28325b00944af3822a25547380279334b91a4")
   (setq paradox-automatically-star t)
   (setq paradox-execute-asynchronously t)
   (add-to-list 'evil-emacs-state-modes 'paradox-menu-mode)
@@ -1021,7 +1083,7 @@ Yasnippet is a snippet manager for Emacs. It works by expanding short
 specific keywords into predetermined structures which are called
 "snippets". For example, one can enter "src" in the =org-mode= buffer
 and press =TAB=, and yasnippet will expand "src" into the standard
-=org-mode= source block "#+BEGIN_SRC ... #+END_SRC". It is very handy
+=org-mode= source block =#+BEGIN_SRC= ... =#+END_SRC=. It is very handy
 when entering repetitive code blocks or structures, and minimizes
 mistakes in the process.
 
@@ -1048,6 +1110,7 @@ mistakes in the process.
         (yas-minor-mode-on))
 
       (defalias 'yas/current-snippet-table 'yas--get-snippet-tables)
+      ;; Only turn on yasnippet for these modes
       (add-hook 'org-mode-hook 'yas-my-initialize)
       (add-hook 'c-mode-common-hook 'yas-my-initialize)
       (add-hook 'python-mode-hook 'yas-my-initialize)
@@ -1184,7 +1247,8 @@ former, but it is not clear if there is a solution for the later.
 ** Auto-complete
 Again, I'm swaying between =company-mode= and =auto-complete= and here
 is my configuration for =auto-complete=. This is a configuration that
-is known to work, and currently has less bug than =company-mode=.
+is known to work, and used to has less bug than =company-mode=. Now
+=company-mode= is my main driver.
 #+BEGIN_SRC emacs-lisp :tangle no
   (use-package auto-complete
    :init
@@ -1234,8 +1298,10 @@ is known to work, and currently has less bug than =company-mode=.
 #+END_SRC
 
 ** Helm
-Helm is an extraordinary package. It provides many functionalities
-under the same framework. A comprehensive guide can be found [[http://tuhdo.github.io/helm-intro.html][here]].
+Helm is an extraordinary package. It is basically a menu/completion
+system for minibuffer input. It provides many functionalities under
+the same framework. A very comprehensive guide can be found [[http://tuhdo.github.io/helm-intro.html][here]]. The
+following configuration is copied from the guide.
 #+BEGIN_SRC emacs-lisp
   (use-package helm
     :init
@@ -1275,9 +1341,11 @@ under the same framework. A comprehensive guide can be found [[http://tuhdo.gith
 #+END_SRC
 
 ** Projectile
-Projectile is a project management package for Emacs. It has nice
-project navigation and integration with other packages. Here is
-actually a minimal setting with integration with helm.
+Projectile is a project management package for Emacs. For any
+directory with a =.git= at the root, it will automatically recognize
+it as a project. It has nice project navigation and integration with
+other packages such as =ag= and =helm=. Here is actually a minimal
+setting with integration with helm.
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
     :init
@@ -1294,6 +1362,7 @@ actually a minimal setting with integration with helm.
       ;; (define-key projectile-mode-map (kbd "C-c p f") 'helm-projectile)
       ;; (define-key projectile-mode-map (kbd "C-c p w") 'projectile-persp-switch-project)
       (setq projectile-enable-caching t)
+      ;; The following are commented out because they are in the custom file now
       ;; (add-to-list 'projectile-other-file-alist '("C" "h" "hpp"))
       ;; (add-to-list 'projectile-other-file-alist '("cu" "h" "cuh"))
       ;; (add-to-list 'projectile-other-file-alist '("cuh" "cu"))
@@ -1301,8 +1370,8 @@ actually a minimal setting with integration with helm.
 #+END_SRC
 
 ** Magit
-=magit= is the best git wrapper, period. It is actually better than
-the official git interface, since the command line interface is a
+=magit= is the best git wrapper, period. It is actually much better
+than the official git interface, since the command line interface is a
 headache for most people. Magit makes interacting with git a
 breeze. The config is very simple too:
 #+BEGIN_SRC emacs-lisp
@@ -1311,6 +1380,10 @@ breeze. The config is very simple too:
   :init
   (global-set-key (kbd "C-c g") 'magit-status))
 #+END_SRC
+
+The only drawback about =magit= is that, once you are used to it, it
+is hard to ever use git in command line any more. This makes remote
+managing a git repo without emacs a big hassle...
 
 ** Undo-tree
 Undo tree is a way to keep track of undo history using a tree-like
@@ -1330,13 +1403,21 @@ save history into a file, and apply compression on that file.
           (setq ad-return-value (concat ad-return-value ".gz")))))
 #+END_SRC
 
+The problem with undo tree is that, it often fails to record your
+history if you make some wild change to the file (like replacing a big
+chunk). Also if you have other ways to change a file like using git
+branch switching, it will not get recorded in undo history, often
+resulting in a version mismatch between the undo tree file and the
+main file. However when it works, it works beautifully and is much
+more handy than the vim undo feature.
+
 ** LaTeX
 Rather than a LaTeX package, there are quite a few packages working
 together here to provide the superior Emacs LaTeX editing
 experience. First is the =cdlatex.el= which is actually maintained
 outside of our package repos. The newest version is 4.6 which can be
 found [[https://staff.fnwi.uva.nl/c.dominik/Tools/cdlatex/cdlatex.el][here]]. I assume in this config file that the newest version is
-already downloaded at =~/.emacs.d/cdlatex/=
+already downloaded at =~/.emacs.d/cdlatex/=.
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'load-path "~/.emacs.d/cdlatex")
   (use-package cdlatex)
@@ -1347,9 +1428,12 @@ lot of configurations here which I don't want to talk about at the moment...
 
 #+BEGIN_SRC emacs-lisp
   (use-package tex-site
+    ;; use LaTeX mode for .tex files
     :mode ("\\.tex\\'" . LaTeX-mode)
+    ;; Delay the configuratio until LaTeX mode is loaded
     :config
     (progn
+      ;; These set up auto-complete with latex. Uncomment these if you want to use ac
       ;; (defun ac-latex-mode-setup ()
       ;;   (add-to-list 'ac-sources 'ac-source-math-unicode)
       ;;   (add-to-list 'ac-sources 'ac-source-math-latex)
@@ -1362,7 +1446,12 @@ lot of configurations here which I don't want to talk about at the moment...
       (defun my-initialize-latex ()
         ;; Latex related settings
         ;; (use-package tex-site)
+
+        ;; Zotelo is a package which interacts with Zotero through the
+        ;; MozRepl console in firefox. It can directly draw references
+        ;; from your zotero collection.
         (use-package zotelo)
+
         ;; (use-package ac-math)
         ;; (add-to-list 'load-path "~/.emacs.d/")
         ;; (add-to-list 'ac-modes 'latex-mode)
@@ -1388,7 +1477,7 @@ lot of configurations here which I don't want to talk about at the moment...
 
         (setq TeX-math-close-double-dollar t)
 
-                                          ;(add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf %t" TeX-run-command nil (latex-mode docTeX-mode)))
+        ;; (add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf %t" TeX-run-command nil (latex-mode docTeX-mode)))
         ;; (setq TeX-command-default "MkLaTeX")
         ;; (add-hook 'latex-mode-hook 'turn-on-cdlatex) ;with AUCTeX LaTeX mode
 
@@ -1396,6 +1485,7 @@ lot of configurations here which I don't want to talk about at the moment...
         (global-set-key (kbd "C-c +") 'cdlatex-item)
         )
 
+      ;; These settings make evil folding work better with LaTeX mode
       (defun evil-outline-folding-latex ()
         (evil-define-command latex-evil-open-fold ()
           "Open one fold under the cursor."
@@ -1454,6 +1544,10 @@ lot of configurations here which I don't want to talk about at the moment...
       ;; (define-key evil-normal-state-map "zR" #'evil-open-all-folds)
       (evil-outline-folding-latex)
 
+      ;; Here we configure synctex which provides bi-directional mapping
+      ;; between the pdf file and the latex source file. Clicking on the
+      ;; pdf file will allow you to jump to the corresponding line in
+      ;; the latex source, and vice versa.
       (defun setup-synctex-latex ()
         (setq TeX-source-correlate-method (quote synctex))
         (setq TeX-source-correlate-mode t)
@@ -1470,6 +1564,9 @@ lot of configurations here which I don't want to talk about at the moment...
                 (output-html "xdg-open")))))
       
       (add-hook 'LaTeX-mode-hook 'my-initialize-latex)
+      ;; MkLaTeX is like a daemon running in background which auto
+      ;; recompiles your latex file when the source is changed, super
+      ;; handy when writing with emacs and pdf opened side-by-side.
       (add-hook 'LaTeX-mode-hook (lambda () (add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf -pdflatex='pdflatex -file-line-error -synctex=1' -pvc %t" TeX-run-command nil (latex-mode docTeX-mode)))))
       (add-hook 'LaTeX-mode-hook (lambda () (setq TeX-command-default "MkLaTeX")))
       (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex) ;with AUCTeX LaTeX mode
@@ -1487,7 +1584,9 @@ lot of configurations here which I don't want to talk about at the moment...
 
 ** Wanderlust
 Wanderlust is a IMAP compatible email client in Emacs. Here is a
-configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old site]].
+configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old site]]. The official
+documentation is [[http://www.gohome.org/wl/doc/wl_toc.html][here]]. This configuration is for my Columbia email. I
+have yet to figure out how to use two email accounts at the same time.
 #+BEGIN_SRC emacs-lisp
   ;; wanderlust
   (autoload 'wl "wl" "Wanderlust" t)
@@ -1695,7 +1794,7 @@ First we turn on Flycheck for all buffers
   (add-hook 'after-init-hook #'global-flycheck-mode)
 #+END_SRC
 
-Now add google c++ style checker
+Now add google c++ style checker and cppcheck
 #+BEGIN_SRC emacs-lisp
     (eval-after-load 'flycheck
       '(progn
@@ -1715,6 +1814,7 @@ Now add google c++ style checker
 ** Smart Parens Mode
 Simply turns on smart parens mode globally.
 #+BEGIN_SRC emacs-lisp
+  ;; smartparens-config is the bundled sane default configuration
   (require 'smartparens-config)
   (smartparens-global-mode t)
 
@@ -1732,6 +1832,13 @@ because we want to use gfm-mode on README.md files
               (setq markdown-command "gfm")))
 #+END_SRC
 
+** Dired+
+=dired+= is an improved version of =dired= which is the file manager
+of Emacs. The setup for =dired+= is simple:
+#+BEGIN_SRC emacs-lisp
+(use-package dired+)
+#+END_SRC
+
 * Language modes
 These are less specific settings than the above section, oriented not
 to a package but to a language mode. Each subsection might contain
@@ -1745,7 +1852,7 @@ First make =.h= files use C++ mode instead of C mode
 #+END_SRC
 
 Then we load =google-c-style=, =ggtags-mode=, and =cpputils-cmake=
-when entering C or C++ mode
+when entering C or C++ mode.
 #+BEGIN_SRC emacs-lisp
   (use-package google-c-style)
   (use-package cpputils-cmake)
@@ -1767,7 +1874,12 @@ Load the custom cuda-mode for cuda files
   (add-to-list 'auto-mode-alist '("\\.cuh\\'" . cuda-mode))
 #+END_SRC
 
-Setup company mode for C-mode languages.
+Setup company mode for C-mode languages. The =irony-mode= actually
+uses a server-client model to maintain a symbol list from clang. It
+works wonderfully for normal C++, but when there are many class
+templates the compiler can still be confused and refuse to tell you
+meaningful things. It is much worse when using in conjunction with
+Cuda. Still, this is the closest it comes to Intellisense.
 #+BEGIN_SRC emacs-lisp
     (add-hook 'c++-mode-hook 'irony-mode)
     (add-hook 'cuda-mode-hook 'irony-mode)
@@ -1787,7 +1899,9 @@ Setup company mode for C-mode languages.
     (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 #+END_SRC
 
-Here are some further config for =cpputils-cmake=
+Here are some further config for =cpputils-cmake=. This package loads
+a cmake file and find the build path and build command for you. We map
+=F5= to =make= and =F6= to =make check=.
 #+BEGIN_SRC emacs-lisp
       (require 's)
       (defun my-chop-include (text) 
@@ -1858,6 +1972,12 @@ and it is suggested that the user should not to modify that
 section. Since our init file is tangled from this org file, we want to
 keep that customization file separate. This can be done as follows:
 
+#+BEGIN_SRC emacs-lisp
+  ;; Set customized variables here
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+#+END_SRC
+
 Because customizations usually involves package specifics, we want to
 defer this block to the end of the initialization process. A side
 effect is that if the init process is somehow interrupted by an error,
@@ -1866,17 +1986,11 @@ custom configs. This kind of behavior signals an error in one of the
 previous parts of initialization process, and you should examine it
 carefully to see where the problem is.
 
-#+BEGIN_SRC emacs-lisp
-  ;; Set customized variables here
-  (setq custom-file "~/.emacs.d/custom.el")
-  (load custom-file)
-#+END_SRC
-
 * Start Server and Session Management
 After everything is settled, we need to start Emacs server and load
 the =session.el= to support cross-session history.
 #+BEGIN_SRC emacs-lisp
-  ;; (require 'session)  
+  (require 'session)  
   (add-hook 'after-init-hook 'session-initialize)
   (load "server")
   (unless (server-running-p)
