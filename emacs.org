@@ -1240,7 +1240,8 @@ former, but it is not clear if there is a solution for the later.
 ** Auto-complete
 Again, I'm swaying between =company-mode= and =auto-complete= and here
 is my configuration for =auto-complete=. This is a configuration that
-is known to work, and currently has less bug than =company-mode=.
+is known to work, and used to has less bug than =company-mode=. Now
+=company-mode= is my main driver.
 #+BEGIN_SRC emacs-lisp :tangle no
   (use-package auto-complete
    :init
@@ -1290,8 +1291,10 @@ is known to work, and currently has less bug than =company-mode=.
 #+END_SRC
 
 ** Helm
-Helm is an extraordinary package. It provides many functionalities
-under the same framework. A comprehensive guide can be found [[http://tuhdo.github.io/helm-intro.html][here]].
+Helm is an extraordinary package. It is basically a menu/completion
+system for minibuffer input. It provides many functionalities under
+the same framework. A very comprehensive guide can be found [[http://tuhdo.github.io/helm-intro.html][here]]. The
+following configuration is copied from the guide.
 #+BEGIN_SRC emacs-lisp
   (use-package helm
     :init
@@ -1331,9 +1334,11 @@ under the same framework. A comprehensive guide can be found [[http://tuhdo.gith
 #+END_SRC
 
 ** Projectile
-Projectile is a project management package for Emacs. It has nice
-project navigation and integration with other packages. Here is
-actually a minimal setting with integration with helm.
+Projectile is a project management package for Emacs. For any
+directory with a =.git= at the root, it will automatically recognize
+it as a project. It has nice project navigation and integration with
+other packages such as =ag= and =helm=. Here is actually a minimal
+setting with integration with helm.
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
     :init
@@ -1350,6 +1355,7 @@ actually a minimal setting with integration with helm.
       ;; (define-key projectile-mode-map (kbd "C-c p f") 'helm-projectile)
       ;; (define-key projectile-mode-map (kbd "C-c p w") 'projectile-persp-switch-project)
       (setq projectile-enable-caching t)
+      ;; The following are commented out because they are in the custom file now
       ;; (add-to-list 'projectile-other-file-alist '("C" "h" "hpp"))
       ;; (add-to-list 'projectile-other-file-alist '("cu" "h" "cuh"))
       ;; (add-to-list 'projectile-other-file-alist '("cuh" "cu"))
@@ -1357,8 +1363,8 @@ actually a minimal setting with integration with helm.
 #+END_SRC
 
 ** Magit
-=magit= is the best git wrapper, period. It is actually better than
-the official git interface, since the command line interface is a
+=magit= is the best git wrapper, period. It is actually much better
+than the official git interface, since the command line interface is a
 headache for most people. Magit makes interacting with git a
 breeze. The config is very simple too:
 #+BEGIN_SRC emacs-lisp
@@ -1367,6 +1373,10 @@ breeze. The config is very simple too:
   :init
   (global-set-key (kbd "C-c g") 'magit-status))
 #+END_SRC
+
+The only drawback about =magit= is that, once you are used to it, it
+is hard to ever use git in command line any more. This makes remote
+managing a git repo without emacs a big hassle...
 
 ** Undo-tree
 Undo tree is a way to keep track of undo history using a tree-like
@@ -1386,13 +1396,21 @@ save history into a file, and apply compression on that file.
           (setq ad-return-value (concat ad-return-value ".gz")))))
 #+END_SRC
 
+The problem with undo tree is that, it often fails to record your
+history if you make some wild change to the file (like replacing a big
+chunk). Also if you have other ways to change a file like using git
+branch switching, it will not get recorded in undo history, often
+resulting in a version mismatch between the undo tree file and the
+main file. However when it works, it works beautifully and is much
+more handy than the vim undo feature.
+
 ** LaTeX
 Rather than a LaTeX package, there are quite a few packages working
 together here to provide the superior Emacs LaTeX editing
 experience. First is the =cdlatex.el= which is actually maintained
 outside of our package repos. The newest version is 4.6 which can be
 found [[https://staff.fnwi.uva.nl/c.dominik/Tools/cdlatex/cdlatex.el][here]]. I assume in this config file that the newest version is
-already downloaded at =~/.emacs.d/cdlatex/=
+already downloaded at =~/.emacs.d/cdlatex/=.
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'load-path "~/.emacs.d/cdlatex")
   (use-package cdlatex)
@@ -1403,9 +1421,12 @@ lot of configurations here which I don't want to talk about at the moment...
 
 #+BEGIN_SRC emacs-lisp
   (use-package tex-site
+    ;; use LaTeX mode for .tex files
     :mode ("\\.tex\\'" . LaTeX-mode)
+    ;; Delay the configuratio until LaTeX mode is loaded
     :config
     (progn
+      ;; These set up auto-complete with latex. Uncomment these if you want to use ac
       ;; (defun ac-latex-mode-setup ()
       ;;   (add-to-list 'ac-sources 'ac-source-math-unicode)
       ;;   (add-to-list 'ac-sources 'ac-source-math-latex)
@@ -1418,7 +1439,12 @@ lot of configurations here which I don't want to talk about at the moment...
       (defun my-initialize-latex ()
         ;; Latex related settings
         ;; (use-package tex-site)
+
+        ;; Zotelo is a package which interacts with Zotero through the
+        ;; MozRepl console in firefox. It can directly draw references
+        ;; from your zotero collection.
         (use-package zotelo)
+
         ;; (use-package ac-math)
         ;; (add-to-list 'load-path "~/.emacs.d/")
         ;; (add-to-list 'ac-modes 'latex-mode)
@@ -1444,7 +1470,7 @@ lot of configurations here which I don't want to talk about at the moment...
 
         (setq TeX-math-close-double-dollar t)
 
-                                          ;(add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf %t" TeX-run-command nil (latex-mode docTeX-mode)))
+        ;; (add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf %t" TeX-run-command nil (latex-mode docTeX-mode)))
         ;; (setq TeX-command-default "MkLaTeX")
         ;; (add-hook 'latex-mode-hook 'turn-on-cdlatex) ;with AUCTeX LaTeX mode
 
@@ -1452,6 +1478,7 @@ lot of configurations here which I don't want to talk about at the moment...
         (global-set-key (kbd "C-c +") 'cdlatex-item)
         )
 
+      ;; These settings make evil folding work better with LaTeX mode
       (defun evil-outline-folding-latex ()
         (evil-define-command latex-evil-open-fold ()
           "Open one fold under the cursor."
@@ -1510,6 +1537,10 @@ lot of configurations here which I don't want to talk about at the moment...
       ;; (define-key evil-normal-state-map "zR" #'evil-open-all-folds)
       (evil-outline-folding-latex)
 
+      ;; Here we configure synctex which provides bi-directional mapping
+      ;; between the pdf file and the latex source file. Clicking on the
+      ;; pdf file will allow you to jump to the corresponding line in
+      ;; the latex source, and vice versa.
       (defun setup-synctex-latex ()
         (setq TeX-source-correlate-method (quote synctex))
         (setq TeX-source-correlate-mode t)
@@ -1526,6 +1557,9 @@ lot of configurations here which I don't want to talk about at the moment...
                 (output-html "xdg-open")))))
       
       (add-hook 'LaTeX-mode-hook 'my-initialize-latex)
+      ;; MkLaTeX is like a daemon running in background which auto
+      ;; recompiles your latex file when the source is changed, super
+      ;; handy when writing with emacs and pdf opened side-by-side.
       (add-hook 'LaTeX-mode-hook (lambda () (add-to-list 'TeX-command-list '("MkLaTeX" "latexmk -pdf -pdflatex='pdflatex -file-line-error -synctex=1' -pvc %t" TeX-run-command nil (latex-mode docTeX-mode)))))
       (add-hook 'LaTeX-mode-hook (lambda () (setq TeX-command-default "MkLaTeX")))
       (add-hook 'LaTeX-mode-hook 'turn-on-cdlatex) ;with AUCTeX LaTeX mode
@@ -1543,7 +1577,9 @@ lot of configurations here which I don't want to talk about at the moment...
 
 ** Wanderlust
 Wanderlust is a IMAP compatible email client in Emacs. Here is a
-configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old site]].
+configuration taken from a somewhat [[http://box.matto.nl/emacs_gmail.html][old site]]. The official
+documentation is [[http://www.gohome.org/wl/doc/wl_toc.html][here]]. This configuration is for my Columbia email. I
+have yet to figure out how to use two email accounts at the same time.
 #+BEGIN_SRC emacs-lisp
   ;; wanderlust
   (autoload 'wl "wl" "Wanderlust" t)
@@ -1737,7 +1773,7 @@ First we turn on Flycheck for all buffers
   (add-hook 'after-init-hook #'global-flycheck-mode)
 #+END_SRC
 
-Now add google c++ style checker
+Now add google c++ style checker and cppcheck
 #+BEGIN_SRC emacs-lisp
     (eval-after-load 'flycheck
       '(progn
@@ -1757,6 +1793,7 @@ Now add google c++ style checker
 ** Smart Parens Mode
 Simply turns on smart parens mode globally.
 #+BEGIN_SRC emacs-lisp
+  ;; smartparens-config is the bundled sane default configuration
   (require 'smartparens-config)
   (smartparens-global-mode t)
 
@@ -1777,7 +1814,7 @@ First make =.h= files use C++ mode instead of C mode
 #+END_SRC
 
 Then we load =google-c-style=, =ggtags-mode=, and =cpputils-cmake=
-when entering C or C++ mode
+when entering C or C++ mode.
 #+BEGIN_SRC emacs-lisp
   (use-package google-c-style)
   (use-package cpputils-cmake)
@@ -1799,7 +1836,12 @@ Load the custom cuda-mode for cuda files
   (add-to-list 'auto-mode-alist '("\\.cuh\\'" . cuda-mode))
 #+END_SRC
 
-Setup company mode for C-mode languages.
+Setup company mode for C-mode languages. The =irony-mode= actually
+uses a server-client model to maintain a symbol list from clang. It
+works wonderfully for normal C++, but when there are many class
+templates the compiler can still be confused and refuse to tell you
+meaningful things. It is much worse when using in conjunction with
+Cuda. Still, this is the closest it comes to Intellisense.
 #+BEGIN_SRC emacs-lisp
     (add-hook 'c++-mode-hook 'irony-mode)
     (add-hook 'cuda-mode-hook 'irony-mode)
@@ -1819,7 +1861,9 @@ Setup company mode for C-mode languages.
     (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 #+END_SRC
 
-Here are some further config for =cpputils-cmake=
+Here are some further config for =cpputils-cmake=. This package loads
+a cmake file and find the build path and build command for you. We map
+=F5= to =make= and =F6= to =make check=.
 #+BEGIN_SRC emacs-lisp
       (require 's)
       (defun my-chop-include (text) 
@@ -1890,6 +1934,12 @@ and it is suggested that the user should not to modify that
 section. Since our init file is tangled from this org file, we want to
 keep that customization file separate. This can be done as follows:
 
+#+BEGIN_SRC emacs-lisp
+  ;; Set customized variables here
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+#+END_SRC
+
 Because customizations usually involves package specifics, we want to
 defer this block to the end of the initialization process. A side
 effect is that if the init process is somehow interrupted by an error,
@@ -1898,17 +1948,11 @@ custom configs. This kind of behavior signals an error in one of the
 previous parts of initialization process, and you should examine it
 carefully to see where the problem is.
 
-#+BEGIN_SRC emacs-lisp
-  ;; Set customized variables here
-  (setq custom-file "~/.emacs.d/custom.el")
-  (load custom-file)
-#+END_SRC
-
 * Start Server and Session Management
 After everything is settled, we need to start Emacs server and load
 the =session.el= to support cross-session history.
 #+BEGIN_SRC emacs-lisp
-  ;; (require 'session)  
+  (require 'session)  
   (add-hook 'after-init-hook 'session-initialize)
   (load "server")
   (unless (server-running-p)
