@@ -244,9 +244,9 @@ no longer need to set their load-path anymore.
 Here we define a list of essential packages that we can't live
 without. After package archives are initialized, Emacs will go through
 this list and install any package in this list which is missing from
-the system. Note that since this is the first time we define this
-global variable, =defvar= is the correct command to use instead of
-=setq=, which is supposed to set variables instead of creating them.
+the system. We define the list using an org table and import it into
+the code block below.
+
 #+NAME: my-packages
 | Name                    | Description                                              |
 |-------------------------+----------------------------------------------------------|
@@ -328,11 +328,12 @@ be important enough I'll add it to this list. I'll also /try/ to
 update this list periodically by removing packages that I don't find
 much use.
 
-Now with =my-required-packages= defined, we need to install these
+Now with the list of packages defined, we need to install these
 packages if they are not already in the system. The following code is
-copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][here]].
-#+BEGIN_SRC emacs-lisp :exports code :var data=my-packages :colnames yes
+copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-management.html][here]]. =data= in the following code block is imported from
+the above table (that is why we need the ugly =inter= and =car=).
 
+#+BEGIN_SRC emacs-lisp :exports code :var data=my-packages :colnames yes
 (require 'cl)
 
 ; method to check if all packages are installed
