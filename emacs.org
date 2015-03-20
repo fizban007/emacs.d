@@ -19,6 +19,12 @@ you can simply symlink it to either =~/.emacs= or
 =~/.emacs.d/init.el=. Your emacs will now load this configuration file
 by default.
 
+There is also the option of using =org-babel-load-file= to load this
+org file in the init script, but I dislike that because you need to
+enable package before doing it. I would like to define things before
+loading packages and it's impossible to do with the
+=org-babel-load-file= approach.
+
 * General Settings
 The settings here are independent of any external packages, but rather
 how Emacs itself behaves. They are added here before any
@@ -233,6 +239,7 @@ Package management is done through the official =package.el=.
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
 
 (package-initialize)
+(require 'cl)
 #+END_SRC
 
 After =(package-initialize)= all the directories under
@@ -334,8 +341,6 @@ copied from [[http://toumorokoshi.github.io/emacs-from-scratch-part-2-package-ma
 the above table (that is why we need the ugly =inter= and =car=).
 
 #+BEGIN_SRC emacs-lisp :exports code :var data=my-packages :colnames yes
-(require 'cl)
-
 ; method to check if all packages are installed
 (defun packages-installed-p ()
   (cl-loop for p in data
@@ -406,8 +411,8 @@ monospace font will be used.
 #+BEGIN_SRC emacs-lisp
   ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
   ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
-  (add-to-list 'initial-frame-alist '(font . "Monaco-10"))
-  (add-to-list 'default-frame-alist '(font . "Monaco-10"))
+  (add-to-list 'initial-frame-alist '(font . "Monaco-9"))
+  (add-to-list 'default-frame-alist '(font . "Monaco-9"))
   ;; (defvar my-font-family "Consolas for Powerline")
   (defvar my-font-family "Monaco")
   ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
@@ -415,8 +420,8 @@ monospace font will be used.
   ;; (defvar my-font-family "Dejavu Sans Mono")
   (defvar my-font-size 90)
   (defvar my-theme 'solarized-dark)
-  ;; (defvar my-theme 'lush)
-
+  ;; (defvar my-theme 'sanityinc-tomorrow-night)
+  ;; (defvar my-theme 'zenburn)
 #+END_SRC
 
 ** Tabbar-ruler
@@ -545,15 +550,15 @@ package bundled with Emacs, but with some customizations:
   (use-package linum
     :init
     (progn
-      ;;(nlinum-mode 1)
+      ;; (nlinum-mode 1)
       ;; (line-number-mode 1)
-      (require 'linum-off)
+      (use-package linum-off)
       (global-linum-mode 1)
       (setq linum-delay t)
       (setq linum-eager nil)
 
-      ;;       (use-package linum-relative
-      ;;         :ensure linum-relative)
+      ;; (use-package linum-relative
+      ;;   :ensure linum-relative)
       ))
 #+END_SRC
 
@@ -580,10 +585,6 @@ theme.
      'mode-line-inactive nil
      :underline nil
      :overline nil)
-    ;; This is mainly to prevent org-mode buffers have a variable line
-    ;; number font
-    (set-face-attribute 'linum nil :family my-font-family :height 100)
-    (tabbar-install-faces)
     )
 
   (if (daemonp)
@@ -852,33 +853,38 @@ date. Here are some of the templates I've accumulated over the years:
 Here are some further settings for org-mode, including key bindings,
 etc. These are mostly copied from elsewhere too.
 #+BEGIN_SRC emacs-lisp
-    (add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\)$" . org-mode))
-    (global-set-key "\C-cl" 'org-store-link)
-    (global-set-key "\C-cc" 'org-capture)
-    (global-set-key "\C-ca" 'org-agenda)
-    (global-set-key "\C-cb" 'org-iswitchb)
-    (add-hook 'org-mode-hook (lambda ()
-                               (setq org-completion-use-ido t)
-                               (visual-line-mode t)))
-    (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-    ;; (add-hook 'org-mode-hook 'th-org-mode-init)
-    (add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
+  (add-to-list 'auto-mode-alist '("\\.\\(org\\|org_archive\\)$" . org-mode))
+  (global-set-key "\C-cl" 'org-store-link)
+  (global-set-key "\C-cc" 'org-capture)
+  (global-set-key "\C-ca" 'org-agenda)
+  (global-set-key "\C-cb" 'org-iswitchb)
+  (add-hook 'org-mode-hook (lambda ()
+                             (setq org-completion-use-ido t)
+                             (visual-line-mode t))
+            ;; This is mainly to prevent org-mode buffers have a variable line
+            ;; number font
+            (set-face-attribute 'linum nil :family my-font-family :height 90)
+            (tabbar-install-faces)
+            )
+  (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+  ;; (add-hook 'org-mode-hook 'th-org-mode-init)
+  (add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
 
-    ;; Org-babel hook
-    (add-hook 'org-mode-hook (lambda ()
-                               ;; active Babel languages
-                               (org-babel-do-load-languages
-                                'org-babel-load-languages
-                                '((haskell . t)
-                                  (python . t)
-                                  (sh . t)
-                                  (C . t)
-                                  (R . t)
-                                  (latex . t)
-                                  (emacs-lisp . t)
-                                  (scheme . t)
-                                  ))
-                               ))
+  ;; Org-babel hook
+  (add-hook 'org-mode-hook (lambda ()
+                             ;; active Babel languages
+                             (org-babel-do-load-languages
+                              'org-babel-load-languages
+                              '((haskell . t)
+                                (python . t)
+                                (sh . t)
+                                (C . t)
+                                (R . t)
+                                (latex . t)
+                                (emacs-lisp . t)
+                                (scheme . t)
+                                ))
+                             ))
 #+END_SRC
 
 The final word about org-mode is that company-mode will sometimes make
@@ -1304,10 +1310,9 @@ the same framework. A very comprehensive guide can be found [[http://tuhdo.githu
 following configuration is copied from the guide.
 #+BEGIN_SRC emacs-lisp
   (use-package helm
-    :init
+    :config
     (progn
       (require 'helm-config)
-
       ;; The default "C-x c" is quite close to "C-x C-c", which quits Emacs.
       ;; Changed to "C-c h". Note: We must set "C-c h" globally, because we
       ;; cannot change `helm-command-prefix-key' once `helm-config' is loaded.
@@ -1908,6 +1913,14 @@ a cmake file and find the build path and build command for you. We map
       ;; Run all tests with F6
       (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
 #+END_SRC
+
+If the package Doxymacs is installed, load it for C/C++ programming modes:
+#+BEGIN_SRC emacs-lisp
+  (when (require 'doxymacs nil 'noerror)
+    (add-hook 'c-mode-common-hook 'doxymacs-mode)
+    (add-hook 'c-mode-common-hook 'doxymacs-font-lock))
+#+END_SRC
+
 
 ** Misc modes
 These are not necessarily language modes but some mode lists that maps

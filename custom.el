@@ -36,6 +36,8 @@
  '(custom-safe-themes
    (quote
     ("cbef37d6304f12fb789f5d80c2b75ea01465e41073c30341dc84c6c0d1eb611d" "6a37be365d1d95fad2f4d185e51928c789ef7a4ccf17e7ca13ad63a8bf5b922f" default)))
+ '(doxymacs-doxygen-style "C++")
+ '(hideshowvis-ignore-same-line nil)
  '(linum-disabled-modes-list
    (quote
     (eshell-mode wl-summary-mode compilation-mode text-mode dired-mode)))
