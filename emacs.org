@@ -1719,7 +1719,21 @@ have yet to figure out how to use two email accounts at the same time.
   ;;      (max-reply-date (thread-get-family (elmo-entity-to-number b))))))
   ;; (add-to-list 'wl-summary-sort-specs 'reply-date)
   ;; (setq wl-summary-default-sort-spec 'reply-date)
-(setq mime-edit-split-message nil)
+
+  ;; Don't split large attachments
+  (setq mime-edit-split-message nil)
+
+  ;; Use external-abook to interface with goobook
+  (add-to-list 'load-path "~/.emacs.d/external-abook")
+  (use-package external-abook
+    :init
+    (progn
+      (setq external-abook-command "goobook-emacs query '%s'")
+      (setq external-abook-completing-read-function 'completing-read)
+      (add-hook 'wl-draft-mode-hook
+                '(lambda ()
+                   (define-key wl-draft-mode-map (kbd "<C-tab>") 'external-abook-try-expand)))
+      ))
 #+END_SRC
 
 ** Semantic mode
@@ -1811,6 +1825,16 @@ Simply turns on smart parens mode globally.
 
   ;; Hightlight matching pairs
   (show-smartparens-global-mode t)
+#+END_SRC
+
+** Markdown mode
+The markdown-mode package is exellent. We have a custom setting simply
+because we want to use gfm-mode on README.md files
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
+  (add-hook 'gfm-mode-hook
+            (lambda ()
+              (setq markdown-command "gfm")))
 #+END_SRC
 
 ** Dired+

@@ -33,11 +33,15 @@
       ("\\chi"))
      (70
       ("\\Phi")))))
+ '(company-eclim-auto-save nil)
+ '(company-lighter-base "Comp")
  '(custom-safe-themes
    (quote
-    ("cbef37d6304f12fb789f5d80c2b75ea01465e41073c30341dc84c6c0d1eb611d" "6a37be365d1d95fad2f4d185e51928c789ef7a4ccf17e7ca13ad63a8bf5b922f" default)))
+    ("6a37be365d1d95fad2f4d185e51928c789ef7a4ccf17e7ca13ad63a8bf5b922f" default)))
  '(doxymacs-doxygen-style "C++")
  '(hideshowvis-ignore-same-line nil)
+ '(eclim-executable "/opt/cuda/libnsight/plugins/org.eclim_1.7.19/bin/eclim")
+ '(eclimd-default-workspace "~/Programs")
  '(linum-disabled-modes-list
    (quote
     (eshell-mode wl-summary-mode compilation-mode text-mode dired-mode)))
@@ -75,13 +79,18 @@
      (ac-clang-flags "-std=c++11" "-I/usr/include/c++/4.9.2/" "-I/usr/include/c++/4.9.2/x86_64-unknown-linux-gnu/" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
      (ac-clang-flags "-std=c++11" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
      (company-clang-arguments "-std=c++11" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/"))))
- '(session-use-package t nil (session)))
+ '(session-use-package t nil (session))
+ '(writeroom-global-effects
+   (quote
+    (writeroom-toggle-fullscreen writeroom-toggle-alpha writeroom-toggle-menu-bar-lines writeroom-toggle-tool-bar-lines writeroom-toggle-vertical-scroll-bars writeroom-toggle-internal-border-width)))
+ '(writeroom-restore-window-config t))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(mode-line ((t (\.\.\. nil :foreground "gray60" :inverse-video nil :box (:line-width 1 :color "#073642" :style unspecified)))))
  '(tabbar-button-highlight ((t (:inherit tabbar-default))))
  '(tabbar-separator ((t (:inherit tabbar-default))))
  '(tabbar-unselected ((t (:inherit tabbar-default)))))
