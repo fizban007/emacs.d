@@ -19,6 +19,12 @@ you can simply symlink it to either =~/.emacs= or
 =~/.emacs.d/init.el=. Your emacs will now load this configuration file
 by default.
 
+There is also the option of using =org-babel-load-file= to load this
+org file in the init script, but I dislike that because you need to
+enable package before doing it. I would like to define things before
+loading packages and it's impossible to do with the
+=org-babel-load-file= approach.
+
 * General Settings
 The settings here are independent of any external packages, but rather
 how Emacs itself behaves. They are added here before any
@@ -414,8 +420,8 @@ monospace font will be used.
   ;; (defvar my-font-family "Dejavu Sans Mono")
   (defvar my-font-size 90)
   (defvar my-theme 'solarized-dark)
-  ;; (defvar my-theme 'lush)
-
+  ;; (defvar my-theme 'sanityinc-tomorrow-night)
+  ;; (defvar my-theme 'zenburn)
 #+END_SRC
 
 ** Tabbar-ruler
@@ -544,15 +550,15 @@ package bundled with Emacs, but with some customizations:
   (use-package linum
     :init
     (progn
-      ;;(nlinum-mode 1)
+      ;; (nlinum-mode 1)
       ;; (line-number-mode 1)
-      (require 'linum-off)
+      (use-package linum-off)
       (global-linum-mode 1)
       (setq linum-delay t)
       (setq linum-eager nil)
 
-      ;;       (use-package linum-relative
-      ;;         :ensure linum-relative)
+      ;; (use-package linum-relative
+      ;;   :ensure linum-relative)
       ))
 #+END_SRC
 
@@ -577,7 +583,8 @@ theme.
      :overline nil)
     (set-face-attribute
      'mode-line-inactive nil
-     :underline nil
+ 
+    :underline nil
      :overline nil)
     (tabbar-install-faces)
     )
@@ -1303,10 +1310,9 @@ the same framework. A very comprehensive guide can be found [[http://tuhdo.githu
 following configuration is copied from the guide.
 #+BEGIN_SRC emacs-lisp
   (use-package helm
-    :init
+    :config
     (progn
       (require 'helm-config)
-
       ;; The default "C-x c" is quite close to "C-x C-c", which quits Emacs.
       ;; Changed to "C-c h". Note: We must set "C-c h" globally, because we
       ;; cannot change `helm-command-prefix-key' once `helm-config' is loaded.
@@ -1931,6 +1937,14 @@ a cmake file and find the build path and build command for you. We map
       ;; Run all tests with F6
       (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
 #+END_SRC
+
+If the package Doxymacs is installed, load it for C/C++ programming modes:
+#+BEGIN_SRC emacs-lisp
+  (when (require 'doxymacs nil 'noerror)
+    (add-hook 'c-mode-common-hook 'doxymacs-mode)
+    (add-hook 'c-mode-common-hook 'doxymacs-font-lock))
+#+END_SRC
+
 
 ** Misc modes
 These are not necessarily language modes but some mode lists that maps
