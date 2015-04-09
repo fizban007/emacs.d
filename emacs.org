@@ -203,6 +203,39 @@ to switch it on.
 (setq redisplay-dont-pause t)
 #+END_SRC
 
+The following code snippet is found [[http://www.blogbyben.com/2015/04/the-joy-of-elisp-powered-code-review.html][here]]. It copies the region of code
+selected to the clipboard and annotate it with the file name and line
+number, along with a bunch of ascii art around it.
+#+BEGIN_SRC emacs-lisp
+  ;; Perform a perl-like chomp
+  (defun chomp (str)
+    "Chomp leading and tailing whitespace from STR."
+    (replace-regexp-in-string (rx (or (: bos (* (any " \t\n")))
+                                      (: (* (any " \t\n")) eos)))
+                              ""
+                              str))
+
+  ;; code review
+  (defun code-review-region (beg end)
+    (interactive "r")
+    (let* ((text (chomp (buffer-substring-no-properties beg end)))
+           (line-number (line-number-at-pos))
+           (file (buffer-file-name))
+           (path (replace-regexp-in-string "^.*branches/" ""
+                                           (replace-regexp-in-string 
+                                            "^.*trunk/" "" file))))
+       (with-temp-buffer
+         (insert text)
+         (goto-char (point-min))
+         (while (re-search-forward "^" nil t)
+           (replace-match "| " nil nil))
+         (goto-char (point-min))
+         (insert (format "+---[%s:%s]\n" path line-number))
+         (goto-char (point-max))
+         (insert "\n+---\n")
+         (kill-region (point-min) (point-max)))))
+#+END_SRC
+
 * Package Repositories
 Now we configure external packages for emacs. This is done using the
 excellent package management tool that comes with emacs itself. First
@@ -265,6 +298,7 @@ the code block below.
 | auto-complete           | Auto completion package.                                 |
 | auto-complete-clang     | Auto completion using clang.                             |
 | cmake-mode              | Provides highlighting for cmake files.                   |
+| color-theme-solarized   | Solarized color theme                                    |
 | company                 | Another auto completion package.                         |
 | company-auctex          | Company plugin for AucTeX mode.                          |
 | company-irony           | Company plugin for irony mode.                           |
@@ -315,7 +349,7 @@ the code block below.
 | smartparens             | A good parenthesis utility.                              |
 | smart-mode-line         | Makes the Emacs modeline better-looking.                 |
 | smex                    | A smart M-x enhancement for Emacs based on ido.          |
-| solarized-theme         | The Solarized theme ported to Emacs.                     |
+# | solarized-theme         | The Solarized theme ported to Emacs.                     |
 | tabbar                  | Displays a tab bar for Emacs.                            |
 | tabbar-ruler            | A good tabbar theme.                                     |
 | undo-tree               | Records undo history in a tree-style structure.          |
@@ -442,7 +476,7 @@ tabbar theme to be very good.
       (global-set-key [\M-left] 'tabbar-ruler-tabbar-backward-tab)
       ;; This is to prevent tabbar-ruler eating a lot of cpu resources
       (setq tabbar-ruler-movement-timer-delay 1000000)
-      (tabbar-install-faces)
+      ;; (tabbar-install-faces)
     ))
 #+END_SRC
 
@@ -574,8 +608,13 @@ theme.
   ;;   (select-frame frame)
   ;;   (my-load-theme frame))
   (defun my-load-theme (&optional frame)
-    (load-theme my-theme t)
+    ;; (load-theme my-theme t)
+    (load-theme 'solarized t)
     (sml/apply-theme sml/theme)
+    (set-frame-parameter frame
+                         'background-mode
+                         'dark)
+    (enable-theme 'solarized)
     ;; Remove modeline under and over lines
     (set-face-attribute
      'mode-line nil
@@ -583,17 +622,21 @@ theme.
      :overline nil)
     (set-face-attribute
      'mode-line-inactive nil
- 
-    :underline nil
+   
+     :underline nil
      :overline nil)
-    (tabbar-install-faces)
+    (tabbar-install-faces frame)
     )
 
-  (if (daemonp)
-      (add-hook 'after-make-frame-functions
-                (lambda (frame)
-                  (my-load-theme)))
-    (my-load-theme))
+  ;; (if (daemonp)
+  ;;     (add-hook 'after-make-frame-functions
+  ;;               (lambda (frame)
+  ;;                 (my-load-theme)))
+  ;;   (my-load-theme))
+  (add-hook 'after-make-frame-functions
+            (lambda (frame)
+              (my-load-theme frame)))
+  (remove-hook 'after-make-frame-functions 'tabbar-install-faces)
 #+END_SRC
 
 Note that Solarized theme will require 24bit color support in
