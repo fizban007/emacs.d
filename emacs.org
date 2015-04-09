@@ -411,8 +411,8 @@ monospace font will be used.
 #+BEGIN_SRC emacs-lisp
   ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
   ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
-  (add-to-list 'initial-frame-alist '(font . "Monaco-9"))
-  (add-to-list 'default-frame-alist '(font . "Monaco-9"))
+  (add-to-list 'initial-frame-alist '(font . "Monaco-10"))
+  (add-to-list 'default-frame-alist '(font . "Monaco-10"))
   ;; (defvar my-font-family "Consolas for Powerline")
   (defvar my-font-family "Monaco")
   ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
@@ -632,7 +632,7 @@ mostly deal with visuals.
   ;; Use C-c s to toggle visibility of scroll bar. The scroll bar is
   ;; actually useful sometimes to get an analog feedback of where you
   ;; are in the buffer
-  (global-set-key (kbd "C-c s") 'scroll-bar-mode)
+  ;; (global-set-key (kbd "C-c s") 'scroll-bar-mode)
 
   ;; Hide the menu bar
   (menu-bar-mode -1)
@@ -1178,49 +1178,51 @@ with these two and while I haven't made up my mind yet, the C++
 completion by =company-mode= is currently having the upper hand. Here
 is the config:
 #+BEGIN_SRC emacs-lisp
-  (use-package company
-    :init
-    (add-hook 'after-init-hook 'global-company-mode)
-    :config
-    (progn
-      (defun check-expansion ()
-        (save-excursion
-          (if (looking-at "\\_>") t
-            (backward-char 1)
-            (if (looking-at "\\.") t
-              (backward-char 1)
-              (if (looking-at "::") t
-                ;; (backward-char 1)
-                (if (looking-at "->") t nil))))))
+   (use-package company
+     :init
+     (add-hook 'after-init-hook 'global-company-mode)
+     :config
+     (progn
+       (defun check-expansion ()
+         (save-excursion
+           (if (looking-at "\\_>") t
+             (backward-char 1)
+             (if (looking-at "\\.") t
+               (backward-char 1)
+               (if (looking-at "::") t
+                 ;; (backward-char 1)
+                 (if (looking-at "->") t
+                   (backward-char 1)
+                   (if (looking-at "->\ ") t nil)))))))
 
-      (defun do-yas-expand ()
-        (let ((yas/fallback-behavior 'return-nil))
-          (yas/expand)))
+       (defun do-yas-expand ()
+         (let ((yas/fallback-behavior 'return-nil))
+           (yas/expand)))
 
-      (defun tab-indent-or-complete ()
-        (interactive)
-        (if (minibufferp)
-            (minibuffer-complete)
-          (if (or (not yas/minor-mode)
-                  (null (do-yas-expand)))
-              (if (check-expansion)
-                  (company-complete-common)
-                (indent-for-tab-command)))))
+       (defun tab-indent-or-complete ()
+         (interactive)
+         (if (minibufferp)
+             (minibuffer-complete)
+           (if (or (not yas/minor-mode)
+                   (null (do-yas-expand)))
+               (if (check-expansion)
+                   (company-complete-common)
+                 (indent-for-tab-command)))))
 
-      (global-set-key (kbd "TAB") 'tab-indent-or-complete)
-      (defun my-setup-company ()
-        (setq company-backends (delete 'company-semantic company-backends))
-        (setq company-backends (delete 'company-eclim company-backends))
-        ;; (add-to-list 'company-backends 'company-elisp)
-        (use-package company-c-headers)
-        (add-to-list 'company-backends 'company-c-headers)
-        (add-to-list 'company-c-headers-path-system "/usr/include/c++/4.9.2/")
-        (setq company-idle-delay 0)
-        (define-key company-active-map (kbd "C-n") 'company-select-next)
-        (define-key company-active-map (kbd "C-p") 'company-select-previous)
-      )
-      (add-hook 'company-mode-hook 'my-setup-company)
-      ))
+       (global-set-key (kbd "TAB") 'tab-indent-or-complete)
+       (defun my-setup-company ()
+         (setq company-backends (delete 'company-semantic company-backends))
+         (setq company-backends (delete 'company-eclim company-backends))
+         ;; (add-to-list 'company-backends 'company-elisp)
+         (use-package company-c-headers)
+         (add-to-list 'company-backends 'company-c-headers)
+         (add-to-list 'company-c-headers-path-system "/usr/include/c++/4.9.2/")
+         (setq company-idle-delay 0)
+         (define-key company-active-map (kbd "C-n") 'company-select-next)
+         (define-key company-active-map (kbd "C-p") 'company-select-previous)
+       )
+       (add-hook 'company-mode-hook 'my-setup-company)
+       ))
 #+END_SRC
 
 There is now a serious bug for =company-mode= which prevents me from
