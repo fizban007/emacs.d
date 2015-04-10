@@ -453,7 +453,7 @@ monospace font will be used.
   ;; (add-to-list 'default-frame-alist '(font . "Dejavu Sans Mono-9"))
   ;; (defvar my-font-family "Dejavu Sans Mono")
   (defvar my-font-size 90)
-  (defvar my-theme 'solarized-dark)
+  (defvar my-theme 'moe-dark)
   ;; (defvar my-theme 'sanityinc-tomorrow-night)
   ;; (defvar my-theme 'zenburn)
 #+END_SRC
@@ -497,6 +497,7 @@ pleasing to look at. Here is the config:
       (setq sml/mode-width 'right)
       (setq sml/shorten-modes t)
       (setq sml/no-confirm-load-theme t)
+      (setq sml/use-projectile-p 'before-prefixes)
       (if after-init-time (sml/setup)
         (add-hook 'after-init-hook 'sml/setup))))
 #+END_SRC
@@ -609,12 +610,18 @@ theme.
   ;;   (my-load-theme frame))
   (defun my-load-theme (&optional frame)
     ;; (load-theme my-theme t)
-    (load-theme 'solarized t)
+    (require 'moe-theme)
+
+    ;; Show highlighted buffer-id as decoration. (Default: nil)
+    (setq moe-theme-highlight-buffer-id t)
+    
+    (moe-dark)
+    ;; (powerline-moe-theme)
     (sml/apply-theme sml/theme)
-    (set-frame-parameter frame
-                         'background-mode
-                         'dark)
-    (enable-theme 'solarized)
+    ;; (set-frame-parameter frame
+    ;;                      'background-mode
+    ;;                      'dark)
+    ;; (enable-theme 'solarized)
     ;; Remove modeline under and over lines
     (set-face-attribute
      'mode-line nil
@@ -690,7 +697,8 @@ mostly deal with visuals.
 
   ;; Show matching brackets. When smart-parens-mode is turned on, this
   ;; will be disabled.
-  (show-paren-mode 1)
+  (show-paren-mode t)
+  (setq show-paren-style 'expression)
 
   ;; Highlighting TODO, FIXME and BUG in programming modes
   (add-hook 'prog-mode-hook
