@@ -318,6 +318,7 @@ the code block below.
 | flx-ido                 | Fuzzy matching for ido.                                  |
 | flycheck                | Instant error check for buffers.                         |
 | flycheck-google-cpplint | Checking google C++ style compliance.                    |
+| flycheck-rust           | Flycheck plugin for the Rust language.                   |
 | function-args           | Function arguments for C++ using semantic.               |
 | geiser                  | A scheme interpreter interface for Emacs.                |
 | ggtags                  | Interface to the GNU Global tags.                        |
@@ -344,6 +345,7 @@ the code block below.
 | popup                   | Library for making popup windows in Emacs.               |
 | projectile              | Project management in Emacs.                             |
 | request                 | Network request library.                                 |
+| rust-mode               | Programming mode for the Rust language.                  |
 | session                 | Saving cross-session history.                            |
 | slime                   | Superior Lisp Interaction Mode for Emacs.                |
 | smartparens             | A good parenthesis utility.                              |
