@@ -318,6 +318,7 @@ the code block below.
 | flx-ido                 | Fuzzy matching for ido.                                  |
 | flycheck                | Instant error check for buffers.                         |
 | flycheck-google-cpplint | Checking google C++ style compliance.                    |
+| flycheck-rust           | Flycheck plugin for the Rust language.                   |
 | function-args           | Function arguments for C++ using semantic.               |
 | geiser                  | A scheme interpreter interface for Emacs.                |
 | ggtags                  | Interface to the GNU Global tags.                        |
@@ -345,6 +346,7 @@ the code block below.
 | popup                   | Library for making popup windows in Emacs.               |
 | projectile              | Project management in Emacs.                             |
 | request                 | Network request library.                                 |
+| rust-mode               | Programming mode for the Rust language.                  |
 | session                 | Saving cross-session history.                            |
 | slime                   | Superior Lisp Interaction Mode for Emacs.                |
 | smartparens             | A good parenthesis utility.                              |
@@ -1437,7 +1439,10 @@ breeze. The config is very simple too:
 (use-package magit
   :commands magit-status
   :init
-  (global-set-key (kbd "C-c g") 'magit-status))
+  (progn
+    (global-set-key (kbd "C-c g") 'magit-status)
+    ;; This line is to avoid setup warning message from magit
+    (setq magit-last-seen-setup-instructions "1.4.0")))
 #+END_SRC
 
 The only drawback about =magit= is that, once you are used to it, it
