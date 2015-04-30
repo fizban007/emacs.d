@@ -334,6 +334,7 @@ the code block below.
 | lua-mode                | Lua language mode.                                       |
 | magit                   | Best Git wrapper.                                        |
 | markdown-mode           | Mode for editting markdown files.                        |
+| moe-theme               | Theme which is very moe :)                               |
 | neotree                 | Displays filesystem contents in a side panel.            |
 | org                     | New version of the Org-mode.                             |
 | org-jekyll              | Engine to power a Jekyll static site from an org buffer. |
@@ -445,8 +446,8 @@ monospace font will be used.
 #+BEGIN_SRC emacs-lisp
   ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
   ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
-  (add-to-list 'initial-frame-alist '(font . "Monaco-10"))
-  (add-to-list 'default-frame-alist '(font . "Monaco-10"))
+  (add-to-list 'initial-frame-alist '(font . "Monaco-9"))
+  (add-to-list 'default-frame-alist '(font . "Monaco-9"))
   ;; (defvar my-font-family "Consolas for Powerline")
   (defvar my-font-family "Monaco")
   ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
@@ -1998,6 +1999,11 @@ If the package Doxymacs is installed, load it for C/C++ programming modes:
     (add-hook 'c-mode-common-hook 'doxymacs-font-lock))
 #+END_SRC
 
+** Haskell Mode
+The following snippet configures the Haskell programming mode. Most notably it turns on the indentation for Haskell code.
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+#+END_SRC
 
 ** Misc modes
 These are not necessarily language modes but some mode lists that maps
