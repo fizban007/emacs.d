@@ -1438,7 +1438,10 @@ breeze. The config is very simple too:
 (use-package magit
   :commands magit-status
   :init
-  (global-set-key (kbd "C-c g") 'magit-status))
+  (progn
+    (global-set-key (kbd "C-c g") 'magit-status)
+    ;; This line is to avoid setup warning message from magit
+    (setq magit-last-seen-setup-instructions "1.4.0")))
 #+END_SRC
 
 The only drawback about =magit= is that, once you are used to it, it
