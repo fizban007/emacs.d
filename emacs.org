@@ -336,6 +336,7 @@ the code block below.
 | magit                   | Best Git wrapper.                                        |
 | markdown-mode           | Mode for editting markdown files.                        |
 | moe-theme               | Theme which is very moe :)                               |
+| multiple-cursors        | Edit file at multiple cursors at the same time.          |
 | neotree                 | Displays filesystem contents in a side panel.            |
 | org                     | New version of the Org-mode.                             |
 | org-jekyll              | Engine to power a Jekyll static site from an org buffer. |
@@ -416,7 +417,10 @@ full documentation can be found on the [[https://github.com/jwiegley/use-package
 #+BEGIN_SRC emacs-lisp
   ;; The first line is to prevent problems with use-package
   (require 'ert)
-  (require 'use-package)
+  (eval-when-compile
+    (require 'use-package))
+  (require 'diminish)
+  (require 'bind-key)
 #+END_SRC
 
 * Look and Feel
@@ -1875,7 +1879,7 @@ Now add google c++ style checker and cppcheck
          ))
 #+END_SRC
 
-** Smart Parens Mode
+** Smartparens Mode
 Simply turns on smart parens mode globally.
 #+BEGIN_SRC emacs-lisp
   ;; smartparens-config is the bundled sane default configuration
@@ -1884,6 +1888,17 @@ Simply turns on smart parens mode globally.
 
   ;; Hightlight matching pairs
   (show-smartparens-global-mode t)
+
+  ;; In C++ mode, automatically insert a new line when pressing return
+  ;; in between a pair of curly braces
+  (sp-local-pair 'c++-mode "{" nil :post-handlers '((my-create-newline-and-enter-sexp "RET")))
+
+  (defun my-create-newline-and-enter-sexp (&rest _ignored)
+    "Open a new brace or bracket expression, with relevant newlines and indent. "
+    (newline)
+    (indent-according-to-mode)
+    (forward-line -1)
+    (indent-according-to-mode))
 #+END_SRC
 
 ** Markdown mode
@@ -1901,6 +1916,17 @@ because we want to use gfm-mode on README.md files
 of Emacs. The setup for =dired+= is simple:
 #+BEGIN_SRC emacs-lisp
 (use-package dired+)
+#+END_SRC
+
+** Multiple Cursors
+=multiple-cursors= is a package to provide functionality similar to
+that in the SublimeText editor.
+#+BEGIN_SRC emacs-lisp
+  (use-package multiple-cursors
+    :bind (("C-c m" . mc/edit-lines)
+           ("C->" . mc/mark-next-like-this)
+           ("C-<" . mc/mark-previous-like-this)
+           ("C-c C-<" . mc/mark-all-like-this)))
 #+END_SRC
 
 * Language modes
@@ -2075,7 +2101,5 @@ the =session.el= to support cross-session history.
 #+END_SRC
 
 * Unfinished
-*** TODO Smartparens mode
-*** TODO Haskell mode
 *** TODO Various language modes
 *** TODO Session management
