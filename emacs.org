@@ -317,7 +317,6 @@ the code block below.
 | evil-surround           | Port of the vim surround plugin.                         |
 | flx-ido                 | Fuzzy matching for ido.                                  |
 | flycheck                | Instant error check for buffers.                         |
-| flycheck-google-cpplint | Checking google C++ style compliance.                    |
 | flycheck-rust           | Flycheck plugin for the Rust language.                   |
 | function-args           | Function arguments for C++ using semantic.               |
 | geiser                  | A scheme interpreter interface for Emacs.                |
@@ -353,7 +352,6 @@ the code block below.
 | smartparens             | A good parenthesis utility.                              |
 | smart-mode-line         | Makes the Emacs modeline better-looking.                 |
 | smex                    | A smart M-x enhancement for Emacs based on ido.          |
-# | solarized-theme         | The Solarized theme ported to Emacs.                     |
 | tabbar                  | Displays a tab bar for Emacs.                            |
 | tabbar-ruler            | A good tabbar theme.                                     |
 | undo-tree               | Records undo history in a tree-style structure.          |
@@ -450,17 +448,21 @@ propietary font. If it is not in your system then maybe the default
 monospace font will be used.
 
 #+BEGIN_SRC emacs-lisp
-  ;; (add-to-list 'initial-frame-alist '(font . "Consolas for Powerline-10"))
-  ;; (add-to-list 'default-frame-alist '(font . "Consolas for Powerline-10"))
+  ;; (add-to-list 'initial-frame-alist '(font . "Source Code Pro-9"))
+  ;; (add-to-list 'default-frame-alist '(font . "Source Code Pro-9"))
+  (defvar my-font-size 85)
   (add-to-list 'initial-frame-alist '(font . "Monaco-9"))
   (add-to-list 'default-frame-alist '(font . "Monaco-9"))
+  (add-to-list 'initial-frame-alist `(height . ,my-font-size))
+  (add-to-list 'default-frame-alist `(height . ,my-font-size))
+  (setq line-spacing 2)
   ;; (defvar my-font-family "Consolas for Powerline")
+  ;; (defvar my-font-family "Source Code Pro")
   (defvar my-font-family "Monaco")
   ;; (add-to-list 'initial-frame-alist '(font . "Dejavu Sans Mono-9"))
   ;; (add-to-list 'default-frame-alist '(font . "Dejavu Sans Mono-9"))
   ;; (defvar my-font-family "Dejavu Sans Mono")
-  (defvar my-font-size 90)
-  (defvar my-theme 'moe-dark)
+  ;; (defvar my-theme 'moe-dark)
   ;; (defvar my-theme 'sanityinc-tomorrow-night)
   ;; (defvar my-theme 'zenburn)
 #+END_SRC
@@ -612,17 +614,19 @@ conditions. The following code loads =solarized-dark= as the default
 theme.
 
 #+BEGIN_SRC emacs-lisp
+  (require 'moe-theme)
   ;; (defun my-reload-theme (frame)
   ;;   (select-frame frame)
   ;;   (my-load-theme frame))
   (defun my-load-theme (&optional frame)
     ;; (load-theme my-theme t)
-    (require 'moe-theme)
 
     ;; Show highlighted buffer-id as decoration. (Default: nil)
-    (setq moe-theme-highlight-buffer-id t)
-    
+    (setq moe-theme-highlight-buffer-id t) ;
+  
     (moe-dark)
+    ;; (load-theme 'atom-one-dark t)
+    ;; (load-theme 'material t)
     ;; (powerline-moe-theme)
     (sml/apply-theme sml/theme)
     ;; (set-frame-parameter frame
@@ -636,10 +640,10 @@ theme.
      :overline nil)
     (set-face-attribute
      'mode-line-inactive nil
-   
+ 
      :underline nil
      :overline nil)
-    (tabbar-install-faces frame)
+    (tabbar-install-faces)
     )
 
   ;; (if (daemonp)
@@ -862,6 +866,17 @@ block for ox-publish:
 	    )))
 #+END_SRC
 
+Another very powerful output option is through pandoc, which can
+convert the org file to virtually any output form:
+#+BEGIN_SRC emacs-lisp
+  (use-package ox-pandoc
+    :config
+    (progn
+      (setq org-pandoc-options-for-beamer-pdf '((latex-engine . "xelatex")))
+      (setq org-pandoc-options-for-latex-pdf '((latex-engine . "xelatex")))
+      ))
+#+END_SRC
+
 ** Markdown Export
 I'd like to add export to markdown mode for ease of writing a
 =README.md= for GitHub. Here is how
@@ -923,7 +938,7 @@ etc. These are mostly copied from elsewhere too.
                                  (visual-line-mode t)
                                  ;; This is mainly to prevent org-mode buffers have a variable line
                                  ;; number font
-                                 (set-face-attribute 'linum nil :family my-font-family :height 90)))
+                                 (set-face-attribute 'linum nil :family my-font-family :height my-font-size)))
       (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
       ;; (add-hook 'org-mode-hook 'th-org-mode-init)
       (add-hook 'org-after-todo-statistics-hook 'org-summary-todo)
@@ -1030,7 +1045,7 @@ to satisfy my needs.
       (define-key evil-normal-state-map "Q" 'call-last-kbd-macro)
       (define-key evil-visual-state-map "Q" 'call-last-kbd-macro)
       ;; (define-key evil-normal-state-map (kbd "TAB") 'evil-undefine)
-      (define-key evil-normal-state-map "\M-." 'evil-undefine)
+      ;; (define-key evil-normal-state-map "\M-." 'evil-undefine)
       (define-key evil-normal-state-map "\C-t" 'evil-undefine)
       (define-key evil-insert-state-map "\C-t" 'evil-undefine)
       (define-key evil-normal-state-map "\C-v" 'evil-scroll-down)
@@ -1116,11 +1131,16 @@ to satisfy my needs.
                                     (grep-mode . emacs)
                                     (bc-menu-mode . emacs)
                                     (magit-branch-manager-mode . emacs)
+                                    ;; (magit-mode . emacs)
+                                    (magit-popup-mode . emacs)
+                                    (magit-diff-mode . emacs)
+                                    (magit-log-mode . emacs)
                                     (rdictcc-buffer-mode . emacs)
                                     (dired-mode . emacs)
                                     (compilation-mode . emacs)
                                     (wdired-mode . normal))
             do (evil-set-initial-state mode state))
+
       ))
   ;; (evilnc-default-hotkeys)
 
@@ -1272,9 +1292,9 @@ is the config:
          (setq company-backends (delete 'company-semantic company-backends))
          (setq company-backends (delete 'company-eclim company-backends))
          ;; (add-to-list 'company-backends 'company-elisp)
-         (use-package company-c-headers)
-         (add-to-list 'company-backends 'company-c-headers)
-         (add-to-list 'company-c-headers-path-system "/usr/include/c++/4.9.2/")
+         ;; (use-package company-c-headers)
+         ;; (add-to-list 'company-backends 'company-c-headers)
+         ;; (add-to-list 'company-c-headers-path-system "/usr/include/c++/5.2.0/")
          (setq company-idle-delay 0)
          (define-key company-active-map (kbd "C-n") 'company-select-next)
          (define-key company-active-map (kbd "C-p") 'company-select-previous)
@@ -1373,6 +1393,7 @@ following configuration is copied from the guide.
     :config
     (progn
       (require 'helm-config)
+      (require 'helm-files)
       ;; The default "C-x c" is quite close to "C-x C-c", which quits Emacs.
       ;; Changed to "C-c h". Note: We must set "C-c h" globally, because we
       ;; cannot change `helm-command-prefix-key' once `helm-config' is loaded.
@@ -1431,6 +1452,10 @@ setting with integration with helm.
       ;; (add-to-list 'projectile-other-file-alist '("C" "h" "hpp"))
       ;; (add-to-list 'projectile-other-file-alist '("cu" "h" "cuh"))
       ;; (add-to-list 'projectile-other-file-alist '("cuh" "cu"))
+
+      ;; This is a temporary fix for "Symbol's value as variable is void: grep-find-ignored-files" error when invoking ag from projectile:
+      (setq grep-find-ignored-files nil)
+      (setq grep-find-ignored-directories nil)
       ))
 #+END_SRC
 
@@ -1445,6 +1470,7 @@ breeze. The config is very simple too:
   :init
   (progn
     (global-set-key (kbd "C-c g") 'magit-status)
+    (add-to-list 'evil-emacs-state-modes 'magit-mode)
     ;; This line is to avoid setup warning message from magit
     (setq magit-last-seen-setup-instructions "1.4.0")))
 #+END_SRC
@@ -1864,19 +1890,20 @@ First we turn on Flycheck for all buffers
 
 Now add google c++ style checker and cppcheck
 #+BEGIN_SRC emacs-lisp
-    (eval-after-load 'flycheck
-      '(progn
-         (require 'flycheck-google-cpplint)
-         ;; Add Google C++ Style checker.
-         ;; In default, syntax checked by Clang and Cppcheck.
-         (flycheck-add-next-checker 'c/c++-cppcheck
-                                    ;; '(warnings-only . c/c++-googlelint)
-                                    'c/c++-googlelint 'append)
-         (setq flycheck-c/c++-googlelint-executable "/usr/bin/cpplint")
-         (setq flycheck-googlelint-verbose "3"
-               flycheck-googlelint-filter "-whitespace,+whitespace/braces,-legal/copyright,-build/c++11"
-               flycheck-googlelint-linelength "120")
-         ))
+  (eval-after-load 'flycheck
+    '(lambda ()
+       ;; (require 'flycheck-google-cpplint)
+       ;; Add Google C++ Style checker.
+       ;; In default, syntax checked by Clang and Cppcheck.
+       (add-hook 'flycheck-mode-hook #'flycheck-irony-setup)
+       (flycheck-add-next-checker 'c/c++-cppcheck)
+                                  ;; '(warnings-only . c/c++-googlelint)
+                                  ;; 'c/c++-googlelint 'append)
+       ;; (setq flycheck-c/c++-googlelint-executable "/usr/bin/cpplint")
+       ;; (setq flycheck-googlelint-verbose "3"
+       ;;       flycheck-googlelint-filter "-whitespace,+whitespace/braces,-legal/copyright,-build/c++11"
+       ;;       flycheck-googlelint-linelength "120")
+       ))
 #+END_SRC
 
 ** Smartparens Mode
@@ -1971,23 +1998,75 @@ templates the compiler can still be confused and refuse to tell you
 meaningful things. It is much worse when using in conjunction with
 Cuda. Still, this is the closest it comes to Intellisense.
 #+BEGIN_SRC emacs-lisp
-    (add-hook 'c++-mode-hook 'irony-mode)
-    (add-hook 'cuda-mode-hook 'irony-mode)
-    (add-hook 'c-mode-hook 'irony-mode)
-    (add-hook 'objc-mode-hook 'irony-mode)
+  (add-hook 'c++-mode-hook 'irony-mode)
+  (add-hook 'cuda-mode-hook 'irony-mode)
+  (add-hook 'c-mode-hook 'irony-mode)
+  (add-hook 'objc-mode-hook 'irony-mode)
 
-    ;; replace the `completion-at-point' and `complete-symbol' bindings in
-    ;; irony-mode's buffers by irony-mode's function
-    (defun my-irony-mode-hook ()
-      (define-key irony-mode-map [remap completion-at-point]
-        'irony-completion-at-point-async)
-      (define-key irony-mode-map [remap complete-symbol]
-        'irony-completion-at-point-async)
-      (setq company-backends (remove 'company-clang company-backends))
-      (add-to-list 'company-backends 'company-irony))
-    (add-hook 'irony-mode-hook 'my-irony-mode-hook)
-    (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
+  ;; replace the `completion-at-point' and `complete-symbol' bindings in
+  ;; irony-mode's buffers by irony-mode's function
+  (defun my-irony-mode-hook ()
+    (define-key irony-mode-map [remap completion-at-point]
+      'irony-completion-at-point-async)
+    (define-key irony-mode-map [remap complete-symbol]
+      'irony-completion-at-point-async)
+    (setq company-backends (remove 'company-clang company-backends))
+    (add-to-list 'company-backends 'company-irony)
+    (add-to-list 'company-backends 'company-irony-c-headers))
+  (add-hook 'irony-mode-hook 'my-irony-mode-hook)
+  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 #+END_SRC
+
+Here is configuration for rtags, and it falls back to gtags when rtags
+doesn't have the project indexed:
+#+BEGIN_SRC emacs-lisp
+  (defun use-rtags (&optional useFileManager)
+    (and (rtags-executable-find "rc")
+         (cond ((not (gtags-get-rootpath)) t)
+               ((and (not (eq major-mode 'c++-mode))
+                     (not (eq major-mode 'c-mode))) (rtags-has-filemanager))
+               (useFileManager (rtags-has-filemanager))
+               (t (rtags-is-indexed)))))
+
+  (defun tags-find-symbol-at-point (&optional prefix)
+    (interactive "P")
+    (if (and (not (rtags-find-symbol-at-point prefix)) rtags-last-request-not-indexed)
+        (gtags-find-tag)))
+  (defun tags-find-references-at-point (&optional prefix)
+    (interactive "P")
+    (if (and (not (rtags-find-references-at-point prefix)) rtags-last-request-not-indexed)
+        (gtags-find-rtag)))
+  (defun tags-find-symbol ()
+    (interactive)
+    (call-interactively (if (use-rtags) 'rtags-find-symbol 'gtags-find-symbol)))
+  (defun tags-find-references ()
+    (interactive)
+    (call-interactively (if (use-rtags) 'rtags-find-references 'gtags-find-rtag)))
+  (defun tags-find-file ()
+    (interactive)
+    (call-interactively (if (use-rtags t) 'rtags-find-file 'gtags-find-file)))
+  (defun tags-imenu ()
+    (interactive)
+    (call-interactively (if (use-rtags t) 'rtags-imenu 'idomenu)))
+
+  (rtags-enable-standard-keybindings c-mode-base-map "\C-cr")
+  ;; (define-key c-mode-base-map (kbd "M-.") (function tags-find-symbol-at-point))
+  ;; (define-key c-mode-base-map (kbd "M-,") (function tags-find-references-at-point))
+  ;; (define-key c-mode-base-map (kbd "M-;") (function tags-find-file))
+  ;; (define-key c-mode-base-map (kbd "C-.") (function tags-find-symbol))
+  ;; (define-key c-mode-base-map (kbd "C-,") (function tags-find-references))
+  ;; (define-key c-mode-base-map (kbd "C-<") (function rtags-find-virtuals-at-point))
+  ;; (define-key c-mode-base-map (kbd "M-i") (function tags-imenu))
+
+  ;; (define-key evil-normal-state-map (kbd "M-.") (function tags-find-symbol-at-point))
+  ;; (define-key evil-normal-state-map (kbd "M-,") (function tags-find-references-at-point))
+  ;; (define-key evil-normal-state-map (kbd "M-;") (function tags-find-file))
+  ;; (define-key evil-normal-state-map (kbd "C-.") (function tags-find-symbol))
+  ;; (define-key evil-normal-state-map (kbd "C-,") (function tags-find-references))
+  ;; (define-key evil-normal-state-map (kbd "C-<") (function rtags-find-virtuals-at-point))
+  ;; (define-key evil-normal-state-map (kbd "M-i") (function tags-imenu))
+#+END_SRC
+
 
 Here are some further config for =cpputils-cmake=. This package loads
 a cmake file and find the build path and build command for you. We map
@@ -2034,6 +2113,61 @@ If the package Doxymacs is installed, load it for C/C++ programming modes:
 The following snippet configures the Haskell programming mode. Most notably it turns on the indentation for Haskell code.
 #+BEGIN_SRC emacs-lisp
   (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+#+END_SRC
+
+** Rust mode
+The following snippet binds F5 to rust compile and F6 to run the current project.
+#+BEGIN_SRC emacs-lisp
+  (defun rust-save-compile ()
+    (interactive)
+    (save-buffer)
+    (if (locate-dominating-file (buffer-file-name) "Cargo.toml")
+        (compile "cargo build")
+      (compile "rustc %s"
+               (buffer-file-name))))
+
+  (defun rust-save-compile-and-run ()
+    (interactive)
+    (save-buffer)
+    (if (locate-dominating-file (buffer-file-name) "Cargo.toml")
+        (compile "cargo run")
+      (compile "rustc %s & %s"
+               (buffer-file-name)
+               (file-name-sans-extension (buffer-file-name)))))
+
+  (eval-after-load "rust-mode" '(require 'racer))
+  (add-hook 'rust-mode-hook #'racer-activate)
+  (add-hook 'rust-mode-hook
+            (lambda ()
+              (define-key rust-mode-map (kbd "<f5>") 'rust-save-compile)
+              (define-key rust-mode-map (kbd "<f6>") 'rust-save-compile-and-run)
+              (setq racer-rust-src-path "~/Programs/rust/src/")
+              (setq racer-cmd "~/Downloads/racer/target/release/racer")
+              (add-to-list 'load-path "~/Downloads/racer/editors/emacs")
+              (define-key rust-mode-map (kbd "TAB") #'racer-complete-or-indent)
+              (define-key rust-mode-map (kbd "M-.") #'racer-find-definition)))
+
+#+END_SRC
+
+** Python mode
+#+BEGIN_SRC emacs-lisp
+  ;; (autoload 'python-mode "python-mode" "Python Mode." t)
+  ;; (add-to-list 'auto-mode-alist '("\\.py\\'" . python-mode))
+  ;; (add-to-list 'interpreter-mode-alist '("python" . python-mode))
+
+  ;; (add-hook 'python-mode-hook
+  ;;        '(lambda () (eldoc-mode 1)) t)
+
+  (add-hook 'python-mode-hook
+            '(lambda ()
+               (add-to-list 'company-backends 'company-jedi)))
+  ;; (use-package jedi)
+
+  ;; (add-hook 'python-mode-hook
+  ;;           '(lambda ()
+  ;;              (setq jedi:server-command (list "python3" jedi:server-script))
+  ;;              (jedi:setup)
+  ;;              (add-to-list 'company-backend 'company-jedi)))
 #+END_SRC
 
 ** Misc modes

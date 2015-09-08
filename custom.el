@@ -37,18 +37,18 @@
  '(company-lighter-base "Comp")
  '(custom-safe-themes
    (quote
-    ("6a37be365d1d95fad2f4d185e51928c789ef7a4ccf17e7ca13ad63a8bf5b922f" default)))
+    ("91faf348ce7c8aa9ec8e2b3885394263da98ace3defb23f07e0ba0a76d427d46" "6a37be365d1d95fad2f4d185e51928c789ef7a4ccf17e7ca13ad63a8bf5b922f" default)))
  '(doxymacs-doxygen-style "C++")
- '(hideshowvis-ignore-same-line nil)
  '(eclim-executable "/opt/cuda/libnsight/plugins/org.eclim_1.7.19/bin/eclim")
  '(eclimd-default-workspace "~/Programs")
+ '(hideshowvis-ignore-same-line nil)
  '(linum-disabled-modes-list
    (quote
     (eshell-mode wl-summary-mode compilation-mode text-mode dired-mode)))
  '(magit-diff-use-overlays nil)
  '(magit-use-overlays nil)
  '(org-export-backends (quote (ascii html icalendar latex md)))
- '(paradox-github-token "99f28325b00944af3822a25547380279334b91a4")
+ '(paradox-github-token "8983172dd5a47dfb1f2890bf922f4e8775c7b56e")
  '(projectile-mode-line (quote (:eval (format " P[%s]" (projectile-project-name)))))
  '(projectile-other-file-alist
    (quote
@@ -72,6 +72,8 @@
      (nil "lock" "gpg")
      ("lock" "")
      ("gpg" ""))))
+ '(py-complete-function (quote py-complete))
+ '(rust-indent-method-chain t)
  '(safe-local-variable-values
    (quote
     ((ac-clang-flags "-std=c++11" "-I/usr/lib/clang/3.5.0/include/" "-I/usr/include/" "-I/usr/include/c++/4.9.2/" "-I/usr/include/c++/4.9.2/x86_64-unknown-linux-gnu/" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
