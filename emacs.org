@@ -495,7 +495,7 @@ most ugly part with some unexplicable symbols. The =smart-mode-line=
 package revamps the mode line and makes it actually useful and more
 pleasing to look at. Here is the config:
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package smart-mode-line
     :init
     (progn 
@@ -615,6 +615,7 @@ theme.
 
 #+BEGIN_SRC emacs-lisp
   (require 'moe-theme)
+  (require 'spaceline-config)
   ;; (defun my-reload-theme (frame)
   ;;   (select-frame frame)
   ;;   (my-load-theme frame))
@@ -622,13 +623,17 @@ theme.
     ;; (load-theme my-theme t)
 
     ;; Show highlighted buffer-id as decoration. (Default: nil)
-    (setq moe-theme-highlight-buffer-id t) ;
-  
+    (setq moe-theme-highlight-buffer-id nil)
+    (setq moe-theme-mode-line-color nil)
+    (moe-theme-set-color 'orange)
+
     (moe-dark)
+    (spaceline-spacemacs-theme)
+    (setq spaceline-highlight-face-func 'spaceline-highlight-face-evil-state)
     ;; (load-theme 'atom-one-dark t)
     ;; (load-theme 'material t)
     ;; (powerline-moe-theme)
-    (sml/apply-theme sml/theme)
+    ;; (sml/apply-theme sml/theme)
     ;; (set-frame-parameter frame
     ;;                      'background-mode
     ;;                      'dark)
@@ -645,7 +650,7 @@ theme.
      :overline nil)
     (tabbar-install-faces)
     )
-
+  (my-load-theme)
   ;; (if (daemonp)
   ;;     (add-hook 'after-make-frame-functions
   ;;               (lambda (frame)
@@ -1972,12 +1977,14 @@ Then we load =google-c-style=, =ggtags-mode=, and =cpputils-cmake=
 when entering C or C++ mode.
 #+BEGIN_SRC emacs-lisp
   (use-package google-c-style)
-  (use-package cpputils-cmake)
+  ;; (use-package cpputils-cmake)
   (use-package ggtags)
+  (use-package rtags)
   (add-hook 'c-mode-common-hook (lambda () (progn
                                              (add-to-list 'flycheck-disabled-checkers 'c/c++-clang)
                                              (add-to-list 'flycheck-disabled-checkers 'c/c++-gcc)
-                                             (cppcm-reload-all)
+                                             (cmake-ide-setup)
+                                             ;; (cppcm-reload-all)
                                              (google-set-c-style)
                                              (ggtags-mode 1)
                                              (setq ggtags-enable-navigation-keys nil))))
@@ -2072,34 +2079,35 @@ Here are some further config for =cpputils-cmake=. This package loads
 a cmake file and find the build path and build command for you. We map
 =F5= to =make= and =F6= to =make check=.
 #+BEGIN_SRC emacs-lisp
-      (require 's)
-      (defun my-chop-include (text) 
-        (s-chop-prefix "-I" text))
+  (require 's)
+  (defun my-chop-include (text) 
+    (s-chop-prefix "-I" text))
 
-      (add-hook 'cppcm-reload-all-hook 
-                (lambda () 
-                  (setq flycheck-clang-include-path (append (mapcar 'my-chop-include cppcm-include-dirs) 
-                                                            (mapcar 'my-chop-include cppcm-preprocess-defines)))
-                  (setq flycheck-nvcc-include-path (append (mapcar 'my-chop-include cppcm-include-dirs)))
-                  ;; (setq ac-clang-cflags ac-clang-flags)
-                  ))
+  (add-hook 'cppcm-reload-all-hook 
+            (lambda () 
+              (setq flycheck-clang-include-path (append (mapcar 'my-chop-include cppcm-include-dirs) 
+                                                        (mapcar 'my-chop-include cppcm-preprocess-defines)))
+              (setq flycheck-nvcc-include-path (append (mapcar 'my-chop-include cppcm-include-dirs)))
+              ;; (setq ac-clang-cflags ac-clang-flags)
+              ))
 
-      ;; (global-set-key (kbd "C-c C-g")
-      ;;              '(lambda ()(interactive) (gud-gdb (concat "gdb --fullname " (cppcm-get-exe-path-current-buffer)))))
-      (setq cppcm-compile-list '(cppcm-compile-in-root-build-dir cppcm-compile cppcm-compile-in-current-exe-dir))
-      (setq compilation-read-command nil)
+  ;; (global-set-key (kbd "C-c C-g")
+  ;;              '(lambda ()(interactive) (gud-gdb (concat "gdb --fullname " (cppcm-get-exe-path-current-buffer)))))
+  (setq cppcm-compile-list '(cppcm-compile-in-root-build-dir cppcm-compile cppcm-compile-in-current-exe-dir))
+  (setq compilation-read-command nil)
 
-      ;; Compile with F5
-      (global-set-key (kbd "<f5>") 'cppcm-compile)
+  ;; Compile with F5
+  (global-set-key (kbd "<f5>") 'cmake-ide-compile)
 
-      (defun my-cppcm-test (test-dir)
-        "Run the test suite in test-dir"
-        (let ((default-directory test-dir)
-              (compile-command "make check")) 
-          (call-interactively 'compile)))
+  (defun my-cppcm-test (test-dir)
+    "Run the test suite in test-dir"
+    (let ((default-directory test-dir)
+          (compile-command "ninja check")) 
+      (call-interactively 'compile)))
 
-      ;; Run all tests with F6
-      (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
+  ;; Run all tests with F6
+  ;; (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cppcm-build-dir)))
+  (global-set-key (kbd "<f6>") '(lambda ()(interactive) (my-cppcm-test cmake-ide-dir)))
 #+END_SRC
 
 If the package Doxymacs is installed, load it for C/C++ programming modes:

@@ -47,8 +47,11 @@
     (eshell-mode wl-summary-mode compilation-mode text-mode dired-mode)))
  '(magit-diff-use-overlays nil)
  '(magit-use-overlays nil)
+ '(org-babel-C++-compiler "clang++")
  '(org-export-backends (quote (ascii html icalendar latex md)))
  '(paradox-github-token "8983172dd5a47dfb1f2890bf922f4e8775c7b56e")
+ '(paradox-spinner-type (quote progress-bar-filled))
+ '(powerline-default-separator (quote wave))
  '(projectile-mode-line (quote (:eval (format " P[%s]" (projectile-project-name)))))
  '(projectile-other-file-alist
    (quote
@@ -76,7 +79,8 @@
  '(rust-indent-method-chain t)
  '(safe-local-variable-values
    (quote
-    ((ac-clang-flags "-std=c++11" "-I/usr/lib/clang/3.5.0/include/" "-I/usr/include/" "-I/usr/include/c++/4.9.2/" "-I/usr/include/c++/4.9.2/x86_64-unknown-linux-gnu/" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
+    ((cmake-ide-dir . "/home/alex/Projects/Aperture/ninja/")
+     (ac-clang-flags "-std=c++11" "-I/usr/lib/clang/3.5.0/include/" "-I/usr/include/" "-I/usr/include/c++/4.9.2/" "-I/usr/include/c++/4.9.2/x86_64-unknown-linux-gnu/" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
      (ac-clang-flags "-std=c++11" "-I/usr/include/" "-I/usr/include/c++/4.9.2/" "-I/usr/include/c++/4.9.2/x86_64-unknown-linux-gnu/" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
      (ac-clang-flags "-std=c++11" "-I/usr/include/c++/4.9.2/" "-I/usr/include/c++/4.9.2/x86_64-unknown-linux-gnu/" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
      (ac-clang-flags "-std=c++11" "-I/home/alex/Programs/Pulsar/include/" "-I/home/alex/Programs/Pulsar/CudaLE/include/")
@@ -92,7 +96,6 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(mode-line ((t (\.\.\. nil :foreground "gray60" :inverse-video nil :box (:line-width 1 :color "#073642" :style unspecified)))))
  '(tabbar-button-highlight ((t (:inherit tabbar-default))))
- '(tabbar-separator ((t (:inherit tabbar-default))))
- '(tabbar-unselected ((t (:inherit tabbar-default)))))
+ '(tabbar-separator ((t (:inherit tabbar-default)))))
+ ;; '(tabbar-unselected ((t (:inherit tabbar-default)))))
